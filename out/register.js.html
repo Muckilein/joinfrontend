@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: register.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: register.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>let users = [];
+let email;
+let user;
+
+
+// const STORAGE_TOKEN = 'EU3DCTQFLIIRYKT20VZ7FI6JEYQ6G4WUYDV99ESF';  
+// const STORAGE_TOKEN = '7WLO2N6502EXUOLVYTZHZH3VTBY404CF2A5ZADMU';  
+
+
+/**
+ * This function initializes the startup process by loading the user data.
+ */
+async function initIndex() {
+
+    await loadUsersRegister();
+    let dat = loadData();
+    let mail = dat[0];
+    let pw = dat[1];    
+    if (mail != "") {
+        document.getElementById('checkbox').checked = true;
+        document.getElementById('emailLogin').value = mail;
+        document.getElementById('passwordLogin').value = pw;
+    }
+}
+
+/**
+ * This function loads the user data from a remote storage and handles potential loading errors.
+ */
+async function loadUsersRegister() {
+
+    try {
+        users = JSON.parse(await getItem('users')) || [];        
+
+    } catch (e) {
+        console.error('Loading error:', e);
+    }
+}
+
+/**
+ * This function handles the registration process by checking if the email already exists, adding the new user, resetting the form, and displaying a success message.
+ */
+async function register() {
+    const newUser = getNewUserFromInputs();
+    const emailExists = await checkEmailExists(newUser.email);
+    if (emailExists) {
+        displayEmailExistsMessage();
+        return;
+    }
+    addUser(newUser);
+    resetForm();
+    displayRegistrationSuccess();
+    setTimeout(backtoLogin, 1000);
+}
+
+function backtoLogin() {
+    window.location.href = "../index.html";
+}
+/**
+ * This function reads the values from the input fields for name, email, and password, and returns an object with the user data. 
+ */
+function getNewUserFromInputs() {
+    const nameInput = document.getElementById('userName');
+    const emailInput = document.getElementById('emailLogin');
+    const passwordInput = document.getElementById('password');
+
+    return {
+        name: nameInput.value,
+        email: emailInput.value,
+        password: passwordInput.value,
+    };
+}
+
+function displayEmailExistsMessage() {
+    alert('The email is already registered.');
+}
+
+/**
+ * Adds a new user to the user list, disables the registration button, and saves the updated user list.
+ * @param {Object} user - The user object to be added to the user list.
+ */
+function addUser(user) {
+    const registerBtn = document.getElementById('registerBtn');
+    registerBtn.disabled = true;
+
+    users.push(user);
+
+    //setItem('users', JSON.stringify(users));
+    setItem('users', users);
+}
+
+/**
+ * This function resets the registration form by clearing the values of the input fields and enabling the registration button.
+ */
+function resetForm() {
+    const nameInput = document.getElementById('userName');
+    const emailInput = document.getElementById('emailLogin');
+    const passwordInput = document.getElementById('password');
+    const registerBtn = document.getElementById('registerBtn');
+
+    nameInput.value = '';
+    emailInput.value = '';
+    passwordInput.value = '';
+    registerBtn.disabled = false;
+}
+
+/**
+ * This function displays a success message for registration and redirects the user to the login page after a short delay.
+ */
+function displayRegistrationSuccess() {
+    let infoBox = document.getElementById("infoBox");
+    infoBox.style.display = "block";
+
+    setTimeout(() => {
+        infoBox.style.display = "none";
+    }, 1500); // Weiterleitung nach 1 Sekunde (1000 Millisekunden)
+}
+
+
+function showInfoBox() {
+    let infoBox = document.getElementById("infoBox");
+    infoBox.style.display = "block";
+    setTimeout(() => {
+        infoBox.style.display = "none";
+    }, 1500); // Weiterleitung nach 1 Sekunde (1000 Millisekunden)
+
+}
+
+// Login // 
+
+/**
+ * This function enables guest access to the application by populating the login fields with pre-defined guest email and password and redirecting the user to the summary page.
+ */
+function openGuestLogin() {
+    const emailField = document.getElementById("emailLogin");
+    const passwordField = document.getElementById("passwordLogin");
+    const loginError = document.getElementById('login-error');
+    const emailValue = "testguest@test.de";
+    const passwordValue = "123";
+
+    emailField.value = emailValue;
+    passwordField.value = passwordValue;
+    loginError.style.display = 'none';
+    setTimeout(function () {
+        emailField.value = "";
+        passwordField.value = "";
+        loginError.style.display = 'none';
+
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const userName = urlParams.get('name');
+
+
+        window.location.href = `./html/summary.html?name=${userName || 'Guest'}`;
+    },);
+}
+
+/**
+ * Handles the login process by comparing the entered email and password with the registered users.
+ * If a matching user is found, the page is redirected to the summary page with the user's name.
+ * Otherwise, a login error message is displayed.
+ * @param {Event} event - The event object from the login form submission.
+ */
+async function loginUser(event) {
+    event.preventDefault();
+    const emailInput = document.getElementById('emailLogin');
+    const passwordInput = document.getElementById('passwordLogin');
+    const loginError = document.getElementById('login-error');
+    let check = document.getElementById('checkbox');
+    let dat = loadData();
+    let mail = dat[0];
+    email = emailInput.value;
+    let password = passwordInput.value;
+    await loadUsersRegister();
+    users.forEach(u => {
+        if (mail === "") {
+            if (u.email === email &amp;&amp; u.password === password) {
+                user = u;
+            }
+        } else {
+            if (u.email === mail) {
+                user = u;
+            }
+        }
+    });
+    setDataToStorage(user,check,loginError);       
+}
+
+/**
+ * When the checkbox remember me is clicked, than the user Data is stored in the local storage.
+ * 
+ * @param {Object} user JSON object of the user
+ * @param {Checkbox} check   Checkbox "remember me"
+ * @param {Object} loginError 
+ */
+function setDataToStorage(user,check,loginError){
+    if (user) {
+        if (check.checked) {
+            saveMe(user.email, user.password);
+        }
+        else {
+            saveMe("", "");
+        }
+        window.location.href = `./html/summary.html?name=${user.name}`;
+    } else {
+
+        loginError.style.display = 'block';
+    }
+}
+
+/**
+ * Stors the given information in the local storage
+ * 
+ * @param {string} email 
+ * @param {string} pw   password of the user
+ */
+function saveMe(email, pw) {
+    let em = JSON.stringify(email);
+    let pass = JSON.stringify(pw);
+    localStorage.setItem('email', em);
+    localStorage.setItem('password', pass);
+}
+
+/** * 
+ * @returns Returns an array [mail,password] of the user that should be rememberd
+ */
+function loadData() {
+    let ret = [];
+    let mail = localStorage.getItem('email');
+    let pw = localStorage.getItem('password');
+    if (mail &amp;&amp; pw) {
+        mail = JSON.parse(mail);
+        pw = JSON.parse(pw);
+
+    } else { mail = ""; pw = "" }
+
+    ret.push(mail);
+    ret.push(pw);
+    return ret;
+}
+
+/**
+ * Loads the list of registered users from the data source.
+ * @function
+ * @async
+ * @returns {Promise&lt;Array&lt;Object>>} - A Promise that resolves to an array of user objects containing the registered users.
+ * @throws {Error} - If there is an error while loading the user data.
+ */
+
+async function loadUsers() {
+    try {
+        const usersData = await getItem('users');
+        return JSON.parse(usersData) || [];
+    } catch (error) {
+        console.error('Loading error:', error);
+        return [];
+    }
+}
+
+async function loadUsersReset() {
+    try {
+        const usersData = await getItem('users');
+        users = JSON.parse(usersData) || [];
+        return users;
+
+    } catch (error) {
+        console.error('Loading error:', error);
+        return [];
+    }
+}
+
+/**
+ * Checks if the specified email address exists in the list of registered users and returns a boolean value.
+ * @param {string} email - The email address to be checked for existence in the list of registered users.
+ * @returns {Promise&lt;boolean>} - A Promise that resolves to a boolean value indicating whether the email exists.
+ */
+
+async function checkEmailExists(email) {
+    const registeredUsers = await loadUsers();
+    const user = registeredUsers.find(user => user.email === email);
+    return !!user;
+}
+
+/**
+ * This function greets the user based on the URL parameters and updates the greeting message according to the time of day.
+ */
+window.onload = function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const userName = urlParams.get('name');
+    const greetingTextElement = document.getElementById('greetingText');
+    const userElement = document.getElementById('user');
+
+    let today = new Date();
+    let currentHour = today.getHours();
+
+    let greeting = currentHour &lt; 12 ? "Good morning" : currentHour &lt; 18 ? "Good day" : "Good evening";
+
+    if (userName === null || userName === "") {
+        userElement.textContent = "Guest";
+        greetingTextElement.textContent = greeting + ",";
+        greetingTextElement.style.color = "black";
+    } else {
+        userElement.textContent = userName;
+        greetingTextElement.textContent = greeting + ",";
+    }
+};
+
+/**
+ * This function changes the source of the logo image after the page has loaded to display the "Join-Logo.svg" image.
+ */
+window.onload = function () {
+    setTimeout(function () {
+        let logo = document.getElementById("join-logo");
+        logo.src = "./img/Join-Logo.svg";
+    }, 800);
+}
+
+
+/**
+ * Sets a key-value pair in the remote storage using a provided token.
+ * @function
+ * @async
+ * @param {string} key - The key to set in the remote storage.
+ * @param {any} value - The value to associate with the specified key.
+ * @returns {Promise&lt;any>} - A Promise that resolves to the response data from the remote storage API.
+ * @throws {Error} - If there is an error while making the request or processing the response.
+ */
+async function setItem(key, value) {
+    const payload = { key, value, token: STORAGE_TOKEN };
+    try {
+        const response = await fetch('https://remote-storage.developerakademie.org/item', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Request error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Retrieves the value associated with the specified key from the remote storage using the provided token.
+ * @function
+ * @async
+ * @param {string} key - The key for which to retrieve the value from the remote storage.
+ * @returns {Promise&lt;any>} - A Promise that resolves to the value associated with the specified key.
+ * @throws {Error} - If there is an error while making the request, processing the response, or if the key is not found.
+ */
+async function getItem(key) {
+    const url = `https://remote-storage.developerakademie.org/item?key=${key}&amp;token=${STORAGE_TOKEN}`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.data) {
+            return data.data.value;
+        } else {
+            throw new Error(`Could not find data with key "${key}".`);
+        }
+    } catch (error) {
+        console.error('Request error:', error);
+        throw error;
+    }
+}
+
+async function onSubmit(event) {
+    event.preventDefault();
+    let formData = new FormData(event.target);
+    let response = await action(formData);
+    if (response.ok) {
+        showInfoBox();
+    } else {
+        alert('E-Mail was not sent!');
+    }
+
+}
+
+function action(formData) {
+    const input = 'https://julia-wessolleck.developerakademie.net/Join/send_mail.php';
+    const requestInit = {
+        method: 'post',
+        body: formData
+    };
+
+    return fetch(input, requestInit);
+}
+
+
+async function onPageLoad() {
+    email = getEmailUrl();
+    user = await getPasswordResetUser();
+}
+
+
+/**
+ * Retrieves the user object for password reset based on the email.
+ * 
+ * @returns {Object|null} - The user object for password reset, or null if not found.
+ */
+async function getPasswordResetUser() {
+    await loadUsersReset();
+    let user = users.find(u => u.email == email);
+    return user;
+}
+
+function getEmailUrl() {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const email = urlParams.get('email');
+    return email;
+}
+
+
+
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#addAssignment">addAssignment</a></li><li><a href="global.html#addContact">addContact</a></li><li><a href="global.html#addContactEdit">addContactEdit</a></li><li><a href="global.html#addDummyContacts">addDummyContacts</a></li><li><a href="global.html#addNameToHref">addNameToHref</a></li><li><a href="global.html#addSubEdit">addSubEdit</a></li><li><a href="global.html#addSubtask">addSubtask</a></li><li><a href="global.html#addSubtaskEdit">addSubtaskEdit</a></li><li><a href="global.html#addSubtaskToTasks">addSubtaskToTasks</a></li><li><a href="global.html#addUser">addUser</a></li><li><a href="global.html#backToBoardFromedit">backToBoardFromedit</a></li><li><a href="global.html#buttonVisibility">buttonVisibility</a></li><li><a href="global.html#calculatePrio">calculatePrio</a></li><li><a href="global.html#calculatePrioAddTask">calculatePrioAddTask</a></li><li><a href="global.html#changeSelect">changeSelect</a></li><li><a href="global.html#checkEmailExists">checkEmailExists</a></li><li><a href="global.html#checkPassword">checkPassword</a></li><li><a href="global.html#checkValidity">checkValidity</a></li><li><a href="global.html#checkboxValidation">checkboxValidation</a></li><li><a href="global.html#checkedContacts">checkedContacts</a></li><li><a href="global.html#chooseColor">chooseColor</a></li><li><a href="global.html#clearInput">clearInput</a></li><li><a href="global.html#clearfirst">clearfirst</a></li><li><a href="global.html#clickLoop">clickLoop</a></li><li><a href="global.html#closeDialog">closeDialog</a></li><li><a href="global.html#closePopUpWindow">closePopUpWindow</a></li><li><a href="global.html#closeTask">closeTask</a></li><li><a href="global.html#createTask">createTask</a></li><li><a href="global.html#createTaskDetails">createTaskDetails</a></li><li><a href="global.html#createTaskHTML">createTaskHTML</a></li><li><a href="global.html#crossAddTask">crossAddTask</a></li><li><a href="global.html#deleteContact">deleteContact</a></li><li><a href="global.html#deleteTask">deleteTask</a></li><li><a href="global.html#displayRegistrationSuccess">displayRegistrationSuccess</a></li><li><a href="global.html#displayTaskDetailsEdit">displayTaskDetailsEdit</a></li><li><a href="global.html#editContact">editContact</a></li><li><a href="global.html#editTask">editTask</a></li><li><a href="global.html#editTaskCorrectForm">editTaskCorrectForm</a></li><li><a href="global.html#editdialog">editdialog</a></li><li><a href="global.html#filterExistingAssignments">filterExistingAssignments</a></li><li><a href="global.html#filterTask">filterTask</a></li><li><a href="global.html#getActiveTasks">getActiveTasks</a></li><li><a href="global.html#getAmountMadeSubs">getAmountMadeSubs</a></li><li><a href="global.html#getAssignmentsEdit">getAssignmentsEdit</a></li><li><a href="global.html#getColor">getColor</a></li><li><a href="global.html#getContact">getContact</a></li><li><a href="global.html#getHTMLSubtasksinDetails">getHTMLSubtasksinDetails</a></li><li><a href="global.html#getHTMLTaskDetails">getHTMLTaskDetails</a></li><li><a href="global.html#getInviteNewAssignment">getInviteNewAssignment</a></li><li><a href="global.html#getItem">getItem</a></li><li><a href="global.html#getItemRegister">getItemRegister</a></li><li><a href="global.html#getJSONContact">getJSONContact</a></li><li><a href="global.html#getMemberByName">getMemberByName</a></li><li><a href="global.html#getNewUserFromInputs">getNewUserFromInputs</a></li><li><a href="global.html#getNotTask">getNotTask</a></li><li><a href="global.html#getPasswordResetUser">getPasswordResetUser</a></li><li><a href="global.html#getTasks">getTasks</a></li><li><a href="global.html#getTimeandGreets">getTimeandGreets</a></li><li><a href="global.html#getTypeColorAddTask">getTypeColorAddTask</a></li><li><a href="global.html#giveTask">giveTask</a></li><li><a href="global.html#handleAddTaskHTML">handleAddTaskHTML</a></li><li><a href="global.html#handleCreateTaskCorrectForm">handleCreateTaskCorrectForm</a></li><li><a href="global.html#handleDialog">handleDialog</a></li><li><a href="global.html#includeHTML">includeHTML</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#initBoard">initBoard</a></li><li><a href="global.html#initIndex">initIndex</a></li><li><a href="global.html#initSummary">initSummary</a></li><li><a href="global.html#isAllreadyInSelection">isAllreadyInSelection</a></li><li><a href="global.html#isAreaEmpty">isAreaEmpty</a></li><li><a href="global.html#isChecked">isChecked</a></li><li><a href="global.html#isContactExisting">isContactExisting</a></li><li><a href="global.html#isFull">isFull</a></li><li><a href="global.html#loadBasics">loadBasics</a></li><li><a href="global.html#loadBasicsAddTask">loadBasicsAddTask</a></li><li><a href="global.html#loadContacts">loadContacts</a></li><li><a href="global.html#loadData">loadData</a></li><li><a href="global.html#loadRemote">loadRemote</a></li><li><a href="global.html#loadRemoteColor">loadRemoteColor</a></li><li><a href="global.html#loadUsers">loadUsers</a></li><li><a href="global.html#loadUsersAll">loadUsersAll</a></li><li><a href="global.html#loadUsersRegister">loadUsersRegister</a></li><li><a href="global.html#loginUser">loginUser</a></li><li><a href="global.html#movePopUp">movePopUp</a></li><li><a href="global.html#movePos">movePos</a></li><li><a href="global.html#moveState">moveState</a></li><li><a href="global.html#moveTo">moveTo</a></li><li><a href="global.html#newCategoryChoosen">newCategoryChoosen</a></li><li><a href="global.html#newContact">newContact</a></li><li><a href="global.html#newPassword">newPassword</a></li><li><a href="global.html#openAddTask">openAddTask</a></li><li><a href="global.html#openAddTaskSmallScreen">openAddTaskSmallScreen</a></li><li><a href="global.html#openBoard">openBoard</a></li><li><a href="global.html#openGuestLogin">openGuestLogin</a></li><li><a href="global.html#openSubtasks">openSubtasks</a></li><li><a href="global.html#openTask">openTask</a></li><li><a href="global.html#preventLoadNew">preventLoadNew</a></li><li><a href="global.html#prioImage">prioImage</a></li><li><a href="global.html#readQueryParameters">readQueryParameters</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#removeBottom">removeBottom</a></li><li><a href="global.html#removePopUP">removePopUP</a></li><li><a href="global.html#renderContacts">renderContacts</a></li><li><a href="global.html#renderInputCategory">renderInputCategory</a></li><li><a href="global.html#renderMember">renderMember</a></li><li><a href="global.html#renderMemberAddTask">renderMemberAddTask</a></li><li><a href="global.html#renderMemberDialog">renderMemberDialog</a></li><li><a href="global.html#renderNoTaskLabel">renderNoTaskLabel</a></li><li><a href="global.html#renderTasks">renderTasks</a></li><li><a href="global.html#resetForm">resetForm</a></li><li><a href="global.html#resizeListener">resizeListener</a></li><li><a href="global.html#resizeListenerAddTask">resizeListenerAddTask</a></li><li><a href="global.html#resizeListenerContacts">resizeListenerContacts</a></li><li><a href="global.html#resizeListernerToFull">resizeListernerToFull</a></li><li><a href="global.html#resizeListernerToSmall">resizeListernerToSmall</a></li><li><a href="global.html#responsiveContactDetailsBackButton">responsiveContactDetailsBackButton</a></li><li><a href="global.html#returnFromAddTask">returnFromAddTask</a></li><li><a href="global.html#saveContactChanges">saveContactChanges</a></li><li><a href="global.html#saveMe">saveMe</a></li><li><a href="global.html#selectPrio">selectPrio</a></li><li><a href="global.html#setBackgroundWhite">setBackgroundWhite</a></li><li><a href="global.html#setCategory">setCategory</a></li><li><a href="global.html#setColorEdit">setColorEdit</a></li><li><a href="global.html#setDataToStorage">setDataToStorage</a></li><li><a href="global.html#setItem">setItem</a></li><li><a href="global.html#setItemRegister">setItemRegister</a></li><li><a href="global.html#setMadeSmall">setMadeSmall</a></li><li><a href="global.html#setNameToHrefs">setNameToHrefs</a></li><li><a href="global.html#setPrioWhiteColor">setPrioWhiteColor</a></li><li><a href="global.html#setSubtasks">setSubtasks</a></li><li><a href="global.html#setTask">setTask</a></li><li><a href="global.html#showAssignmentCheckboxesEdit">showAssignmentCheckboxesEdit</a></li><li><a href="global.html#showCategory">showCategory</a></li><li><a href="global.html#showCategoryPrevent">showCategoryPrevent</a></li><li><a href="global.html#showCheckboxes">showCheckboxes</a></li><li><a href="global.html#showContactDetails">showContactDetails</a></li><li><a href="global.html#showPopUpWindowNewContact">showPopUpWindowNewContact</a></li><li><a href="global.html#sizeAction">sizeAction</a></li><li><a href="global.html#startDragging">startDragging</a></li><li><a href="global.html#stoppen">stoppen</a></li><li><a href="global.html#taskHTMLCode">taskHTMLCode</a></li><li><a href="global.html#tasksForSummary">tasksForSummary</a></li><li><a href="global.html#uncheckAll">uncheckAll</a></li><li><a href="global.html#unshowCheckboxesEdit">unshowCheckboxesEdit</a></li><li><a href="global.html#urgentTask">urgentTask</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Sat Sep 09 2023 17:45:10 GMT+0200 (Mitteleuropäische Sommerzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

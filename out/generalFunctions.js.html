@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: generalFunctions.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: generalFunctions.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>
+// const STORAGE_TOKENold = 'EU3DCTQFLIIRYKT20VZ7FI6JEYQ6G4WUYDV99ESF';   
+const STORAGE_TOKEN = '7WLO2N6502EXUOLVYTZHZH3VTBY404CF2A5ZADMU';   
+const STORAGE_URL = 'https://remote-storage.developerakademie.org/item'; 
+let tasks = []; 
+let p;  
+let contacts ;
+let generatedLetters = [];
+
+/**
+ * load all external html files with the attribut w3-include-html
+ */
+async function includeHTML() {
+    let includeElements = document.querySelectorAll('[w3-include-html]');
+    for (let i = 0; i &lt; includeElements.length; i++) {
+        const element = includeElements[i];
+        file = element.getAttribute("w3-include-html"); // "includes/header.html"
+        let resp = await fetch(file);
+        if (resp.ok) {
+            element.innerHTML = await resp.text();
+        } else {
+            element.innerHTML = 'Page not found';
+        }
+    }
+}
+
+/**
+ * Adds the username to the href of the links.
+ * 
+ * @param {string} userNameAddTask  username
+ */
+function setNameToHrefs(userNameAddTask){
+   
+    document.getElementById('menu_board').href = `board.html?name=${userNameAddTask}`;
+    document.getElementById('menu_add-task').href = `add-task.html?name=${userNameAddTask}`;
+    document.getElementById('menu_contacts').href = `contacts.html?name=${userNameAddTask}`;
+    document.getElementById('menu_summary').href = `summary.html?name=${userNameAddTask}`;
+    document.getElementById('menu_legal-notice').href = `legal-notice.html?name=${userNameAddTask}`;
+    document.getElementById('helpId').href = `help.html?name=${userNameAddTask}`;
+    document.getElementById('menu_help').href = `help.html?name=${userNameAddTask}`;   
+}
+
+/**
+ * Stores a key-value pair in the remote storage using the provided token.
+ * @async
+ * @param {string} key - The key to be stored in the remote storage.
+ * @param {any} value - The value to be associated with the specified key.
+ * @returns {Promise&lt;any>} - A Promise that contains the response data from the remote storage API.
+ * @throws {Error} - If there is an error while making the request or processing the response.
+ */
+ async function setItem(key, value) {
+    const payload = { key, value, token: STORAGE_TOKEN };
+    try {
+        const response = await fetch(STORAGE_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Request error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Retrieves the value associated with the specified key from the remote storage using the provided token.
+ * @async
+ * @param {string} key - The key for which to retrieve the value from the remote storage.
+ * @returns {Promise&lt;any>} - A Promise that contains the value associated with the specified key.
+ * @throws {Error} - If there is an error while making the request or processing the response, or if the key is not found.
+ */
+ async function getItem(key) {
+    const url = `${STORAGE_URL}?key=${key}&amp;token=${STORAGE_TOKEN}`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Request error:', error);
+        throw error;
+    }
+}
+
+/**
+ * This function saves the tasks on the remote storage.
+ * @param {string} key - key e.g. 'tasks'
+ * @param {string} value - the JSON Array, that should be saved
+ * @returns - the promise
+ */
+async function setTask(key, value) {
+    let v = value
+    if (value.length == 0) {
+        v = '[]';
+    }
+    const payload = { key: key, value: v, token: STORAGE_TOKEN };
+    return fetch(STORAGE_URL, { method: 'POST', body: JSON.stringify(payload) }).then(resp => resp.json());
+}
+
+/*-----------------Summary---------------*/
+/**
+ * This function used in loadRemote(). Fetches the object with the key from remote storage.
+ * @param {string} key - key where the objects is stored remote.
+ * @returns - returns the data.value
+ */
+async function getTasks(key) {
+    const url = `${STORAGE_URL}?key=${key}&amp;token=${STORAGE_TOKEN}`;
+    p = await fetch(url).then(resp => resp.json()).then(resp => resp.data.value);
+    return p;
+}
+
+/**
+ * This function loads the tasks from the remote storage and saves it in tasks.
+ * @returns returns the tasks as an JSON Array
+ */
+async function loadRemote() {
+    try {
+        await getTasks('tasks');
+        tasks = JSON.parse(p.replaceAll('\'', '"'));
+        return tasks;
+    } catch (e) {
+        console.info('Could not found tasks');
+    }
+}
+
+/**
+ * This function stores a value under a specific key in the remote storage and handles error cases.
+ */
+async function setItemRegister(key, value) {
+    const payload = { key, value, token: STORAGE_TOKEN };
+    try {
+        const response = await fetch('https://remote-storage.developerakademie.org/item', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Request error:', error);
+        throw error;
+    }
+}
+
+/**
+ * This function retrieves the value of a specific key from the remote storage and handles error cases.
+ */
+async function getItemRegister(key) {
+    const url = `https://remote-storage.developerakademie.org/item?key=${key}&amp;token=${STORAGE_TOKEN}`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.data) {
+            return data.data.value;
+        } else {
+            throw new Error(`Could not find data with key "${key}".`);
+        }
+    } catch (error) {
+        console.error('Request error:', error);
+        throw error;
+    }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#addAssignment">addAssignment</a></li><li><a href="global.html#addContact">addContact</a></li><li><a href="global.html#addContactEdit">addContactEdit</a></li><li><a href="global.html#addDummyContacts">addDummyContacts</a></li><li><a href="global.html#addNameToHref">addNameToHref</a></li><li><a href="global.html#addSubEdit">addSubEdit</a></li><li><a href="global.html#addSubtask">addSubtask</a></li><li><a href="global.html#addSubtaskEdit">addSubtaskEdit</a></li><li><a href="global.html#addSubtaskToTasks">addSubtaskToTasks</a></li><li><a href="global.html#addUser">addUser</a></li><li><a href="global.html#backToBoardFromedit">backToBoardFromedit</a></li><li><a href="global.html#buttonVisibility">buttonVisibility</a></li><li><a href="global.html#calculatePrio">calculatePrio</a></li><li><a href="global.html#calculatePrioAddTask">calculatePrioAddTask</a></li><li><a href="global.html#changeSelect">changeSelect</a></li><li><a href="global.html#checkEmailExists">checkEmailExists</a></li><li><a href="global.html#checkPassword">checkPassword</a></li><li><a href="global.html#checkValidity">checkValidity</a></li><li><a href="global.html#checkboxValidation">checkboxValidation</a></li><li><a href="global.html#checkedContacts">checkedContacts</a></li><li><a href="global.html#chooseColor">chooseColor</a></li><li><a href="global.html#clearInput">clearInput</a></li><li><a href="global.html#clearfirst">clearfirst</a></li><li><a href="global.html#clickLoop">clickLoop</a></li><li><a href="global.html#closeDialog">closeDialog</a></li><li><a href="global.html#closePopUpWindow">closePopUpWindow</a></li><li><a href="global.html#closeTask">closeTask</a></li><li><a href="global.html#createTask">createTask</a></li><li><a href="global.html#createTaskDetails">createTaskDetails</a></li><li><a href="global.html#createTaskHTML">createTaskHTML</a></li><li><a href="global.html#crossAddTask">crossAddTask</a></li><li><a href="global.html#deleteContact">deleteContact</a></li><li><a href="global.html#deleteTask">deleteTask</a></li><li><a href="global.html#displayRegistrationSuccess">displayRegistrationSuccess</a></li><li><a href="global.html#displayTaskDetailsEdit">displayTaskDetailsEdit</a></li><li><a href="global.html#editContact">editContact</a></li><li><a href="global.html#editTask">editTask</a></li><li><a href="global.html#editTaskCorrectForm">editTaskCorrectForm</a></li><li><a href="global.html#editdialog">editdialog</a></li><li><a href="global.html#filterExistingAssignments">filterExistingAssignments</a></li><li><a href="global.html#filterTask">filterTask</a></li><li><a href="global.html#getActiveTasks">getActiveTasks</a></li><li><a href="global.html#getAmountMadeSubs">getAmountMadeSubs</a></li><li><a href="global.html#getAssignmentsEdit">getAssignmentsEdit</a></li><li><a href="global.html#getColor">getColor</a></li><li><a href="global.html#getContact">getContact</a></li><li><a href="global.html#getHTMLSubtasksinDetails">getHTMLSubtasksinDetails</a></li><li><a href="global.html#getHTMLTaskDetails">getHTMLTaskDetails</a></li><li><a href="global.html#getInviteNewAssignment">getInviteNewAssignment</a></li><li><a href="global.html#getItem">getItem</a></li><li><a href="global.html#getItemRegister">getItemRegister</a></li><li><a href="global.html#getJSONContact">getJSONContact</a></li><li><a href="global.html#getMemberByName">getMemberByName</a></li><li><a href="global.html#getNewUserFromInputs">getNewUserFromInputs</a></li><li><a href="global.html#getNotTask">getNotTask</a></li><li><a href="global.html#getPasswordResetUser">getPasswordResetUser</a></li><li><a href="global.html#getTasks">getTasks</a></li><li><a href="global.html#getTimeandGreets">getTimeandGreets</a></li><li><a href="global.html#getTypeColorAddTask">getTypeColorAddTask</a></li><li><a href="global.html#giveTask">giveTask</a></li><li><a href="global.html#handleAddTaskHTML">handleAddTaskHTML</a></li><li><a href="global.html#handleCreateTaskCorrectForm">handleCreateTaskCorrectForm</a></li><li><a href="global.html#handleDialog">handleDialog</a></li><li><a href="global.html#includeHTML">includeHTML</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#initBoard">initBoard</a></li><li><a href="global.html#initIndex">initIndex</a></li><li><a href="global.html#initSummary">initSummary</a></li><li><a href="global.html#isAllreadyInSelection">isAllreadyInSelection</a></li><li><a href="global.html#isAreaEmpty">isAreaEmpty</a></li><li><a href="global.html#isChecked">isChecked</a></li><li><a href="global.html#isContactExisting">isContactExisting</a></li><li><a href="global.html#isFull">isFull</a></li><li><a href="global.html#loadBasics">loadBasics</a></li><li><a href="global.html#loadBasicsAddTask">loadBasicsAddTask</a></li><li><a href="global.html#loadContacts">loadContacts</a></li><li><a href="global.html#loadData">loadData</a></li><li><a href="global.html#loadRemote">loadRemote</a></li><li><a href="global.html#loadRemoteColor">loadRemoteColor</a></li><li><a href="global.html#loadUsers">loadUsers</a></li><li><a href="global.html#loadUsersAll">loadUsersAll</a></li><li><a href="global.html#loadUsersRegister">loadUsersRegister</a></li><li><a href="global.html#loginUser">loginUser</a></li><li><a href="global.html#movePopUp">movePopUp</a></li><li><a href="global.html#movePos">movePos</a></li><li><a href="global.html#moveState">moveState</a></li><li><a href="global.html#moveTo">moveTo</a></li><li><a href="global.html#newCategoryChoosen">newCategoryChoosen</a></li><li><a href="global.html#newContact">newContact</a></li><li><a href="global.html#newPassword">newPassword</a></li><li><a href="global.html#openAddTask">openAddTask</a></li><li><a href="global.html#openAddTaskSmallScreen">openAddTaskSmallScreen</a></li><li><a href="global.html#openBoard">openBoard</a></li><li><a href="global.html#openGuestLogin">openGuestLogin</a></li><li><a href="global.html#openSubtasks">openSubtasks</a></li><li><a href="global.html#openTask">openTask</a></li><li><a href="global.html#preventLoadNew">preventLoadNew</a></li><li><a href="global.html#prioImage">prioImage</a></li><li><a href="global.html#readQueryParameters">readQueryParameters</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#removeBottom">removeBottom</a></li><li><a href="global.html#removePopUP">removePopUP</a></li><li><a href="global.html#renderContacts">renderContacts</a></li><li><a href="global.html#renderInputCategory">renderInputCategory</a></li><li><a href="global.html#renderMember">renderMember</a></li><li><a href="global.html#renderMemberAddTask">renderMemberAddTask</a></li><li><a href="global.html#renderMemberDialog">renderMemberDialog</a></li><li><a href="global.html#renderNoTaskLabel">renderNoTaskLabel</a></li><li><a href="global.html#renderTasks">renderTasks</a></li><li><a href="global.html#resetForm">resetForm</a></li><li><a href="global.html#resizeListener">resizeListener</a></li><li><a href="global.html#resizeListenerAddTask">resizeListenerAddTask</a></li><li><a href="global.html#resizeListenerContacts">resizeListenerContacts</a></li><li><a href="global.html#resizeListernerToFull">resizeListernerToFull</a></li><li><a href="global.html#resizeListernerToSmall">resizeListernerToSmall</a></li><li><a href="global.html#responsiveContactDetailsBackButton">responsiveContactDetailsBackButton</a></li><li><a href="global.html#returnFromAddTask">returnFromAddTask</a></li><li><a href="global.html#saveContactChanges">saveContactChanges</a></li><li><a href="global.html#saveMe">saveMe</a></li><li><a href="global.html#selectPrio">selectPrio</a></li><li><a href="global.html#setBackgroundWhite">setBackgroundWhite</a></li><li><a href="global.html#setCategory">setCategory</a></li><li><a href="global.html#setColorEdit">setColorEdit</a></li><li><a href="global.html#setDataToStorage">setDataToStorage</a></li><li><a href="global.html#setItem">setItem</a></li><li><a href="global.html#setItemRegister">setItemRegister</a></li><li><a href="global.html#setMadeSmall">setMadeSmall</a></li><li><a href="global.html#setNameToHrefs">setNameToHrefs</a></li><li><a href="global.html#setPrioWhiteColor">setPrioWhiteColor</a></li><li><a href="global.html#setSubtasks">setSubtasks</a></li><li><a href="global.html#setTask">setTask</a></li><li><a href="global.html#showAssignmentCheckboxesEdit">showAssignmentCheckboxesEdit</a></li><li><a href="global.html#showCategory">showCategory</a></li><li><a href="global.html#showCategoryPrevent">showCategoryPrevent</a></li><li><a href="global.html#showCheckboxes">showCheckboxes</a></li><li><a href="global.html#showContactDetails">showContactDetails</a></li><li><a href="global.html#showPopUpWindowNewContact">showPopUpWindowNewContact</a></li><li><a href="global.html#sizeAction">sizeAction</a></li><li><a href="global.html#startDragging">startDragging</a></li><li><a href="global.html#stoppen">stoppen</a></li><li><a href="global.html#taskHTMLCode">taskHTMLCode</a></li><li><a href="global.html#tasksForSummary">tasksForSummary</a></li><li><a href="global.html#uncheckAll">uncheckAll</a></li><li><a href="global.html#unshowCheckboxesEdit">unshowCheckboxesEdit</a></li><li><a href="global.html#urgentTask">urgentTask</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Sat Sep 09 2023 17:45:10 GMT+0200 (Mitteleuropäische Sommerzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: Add-taks-rendering-helpers.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: Add-taks-rendering-helpers.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>let dummyContacts = [];
+let colorsCategory = [];
+let usersRegistered = [];
+let dummy;              // helpvariable for creating the assignment list of a task
+let isSmallAdd;     // true if the window is gone in the smallscreen
+let prio = 2;   //  proprity of a task
+let prioOld = 0;// previouse proprity of a task
+let state = 0;      // standard state of a task when it is created and not specified (in add-task a new task has the state 0 ("to do"))
+let addedContacts = []; // assigned contacts for a tasks
+let chosenCategory = "";
+let categoryColor = '#1FD7C1';
+let expandedCategory = false;
+let categoryTitle;
+let categoryChoices;  // aktual choosen category
+let newCategoryField = ` &lt;div class="selectionChoice" onclick="renderInputCategory(event)" value="newCategory">new Category&lt;/div>`;
+let dialog = false; // is the dialog open
+let expanded = false; // is the selection with the checkboxed of the assignments expanded
+let checkboxes = [];  // saves all the checkboxes that are relevant at the moment
+let firstCheckbox;    // first checkbox of the assigments (when form validation fails: 'At least one checkbox must be selected.' is blend in here )
+let checked = false;  // is at least one checkbox in the assignment selection chlicked?
+let changed = false;  // is the enter-email input open or not
+let numberSubtasks = 1; //number of the subtasks of the aktual task
+let subtasks = [];      // list that contains the titles of a subtask
+let colorAll = ['#FF7A00', '#9327FF', '#29ABE2', '#FC71FF', '#02CF2F', '#AF1616', '#462F8A', '#FFC700', '#0223cf'];
+let userNameAddTask; // name of the actual logged in user
+let newCategory = "";
+let addTask;        // true, when we are in dhe AddTask html false, wehen we are on board
+let initialColors = [
+    { name: 'Design', color: '#FF7A00' },
+    { name: 'Sales', color: '#FC71FF' },
+    { name: 'Backoffice', color: '#1FD7C1' },
+    { name: 'Media', color: '#FFC701' },
+    { name: 'Marketing', color: '#0038FF' }]
+
+//---------------------------------------------------Loading the contacts and registered person--------------------------------------------------
+/**
+ * Loads the list of registered users from the data source.
+ * @function
+ * @async
+ * @returns {Promise&lt;Array&lt;Object>>} - A Promise that resolves to an array of user objects containing the registered users.
+ * @throws {Error} - If there is an error while loading the user data.
+ */
+
+async function loadUsersAll() {
+    usersRegistered = [];
+    try {
+        let usersData = await getItem('users');
+        let userArray = JSON.parse(usersData['data']['value']);
+        userArray.forEach(user => {
+            let u = { "name": user['name'], "email": user['email'] };
+            usersRegistered.push(u);
+        });
+    } catch (error) {
+        console.error('Loading error:', error);
+        return [];
+    }
+}
+
+/**
+ * Loads the contacs from the remote server in dummyContacts
+ */
+async function loadContacts() {
+    contacts = [];
+    contacts = JSON.parse(await getContact('contacts')).sort((a, b) => a.name.localeCompare(b.name));
+
+    let i = 0;
+    contacts.forEach(element => { //colors[i % 9]
+        let a = { "name": element['name'], "email": element['email'], "id": i + '', "iconColor": element['iconColor'], "short": element['short'] };
+        i++;
+        dummyContacts.push(a);
+    });
+
+    await loadRemoteColor();
+    await loadUsersAll();
+    // loaded all registered User to the contact list
+    usersRegistered.forEach(u => {
+        let firstName = u['name'].trim().split(' ')[0]; // Erster Name
+        let lastName = u['name'].trim().split(' ')[1]; // Nachname
+        let short = (firstName ? firstName.charAt(0) : '') + (lastName ? lastName.charAt(0) : '');
+        let a = { "name": u['name'], "email": u['email'], "id": i + '', "iconColor": colorAll[i % 9], "short": short };
+        dummyContacts.push(a);
+    });
+}
+
+/**
+ * Is used in loadContacts(). Fetches the contacts as a JSON Array
+ * 
+ * @param {string} key  key where the contacts are stored
+ * @returns             JSON array that contains the list of the contats
+ */
+async function getContact(key) {
+    const url = `${STORAGE_URL}?key=${key}&amp;token=${STORAGE_TOKEN}`;
+    return fetch(url)
+        .then(res => res.json())
+        .then(res => {
+            if (res.data) {
+                return res.data.value;
+            }
+            throw `Could not find data with key "${key}".`;
+        });
+}
+
+/**
+ * 
+ * @param {string} n  Saves the JSON object of a contact with the name n in the variable 'dummy'
+ */
+function getJSONContact(n) {
+    dummyContacts.forEach(element => {
+        if (element['name'] == n) {
+            dummy = element;
+            return dummy;
+        };
+    });
+}
+
+
+/** Sets the actual choosen prio and saves the old one
+ * In the add task dialog it sets the color of the choosen prio to rgb(255, 178, 36) and make the preiviouse white again
+ * 
+ * @param {*} num 
+ * @param {*} id 
+ */
+function selectPrio(num, id) {
+    prio = num;
+    document.getElementById('' + id + 0).style.backgroundColor = 'white';
+    document.getElementById('' + id + 1).style.backgroundColor = 'white';
+    document.getElementById('' + id + 2).style.backgroundColor = 'white';
+    document.getElementById('' + id + num).style.backgroundColor = calculatePrioAddTask('' + prio)[2];// 'rgb(255, 178, 36)';
+    if (id == 'prioEdit') {
+        setPrioWhiteColor('prioE', 'prioEdit', num);
+        document.getElementById('prioE' + num).classList.add('iconWhite');
+        document.getElementById('prioEdit' + num).classList.add('bold');
+    } else {
+        setPrioWhiteColor('prioAdd', 'prio', num);
+        document.getElementById('prioAdd' + num).classList.add('iconWhite');
+        document.getElementById('prio' + num).classList.add('bold');
+    }
+
+    prioOld = prio;
+}
+
+/**
+ * Is executed, when the window of the screen is resized
+ */
+
+function resizeListenerAddTask() {
+    if (window.innerWidth &lt;= 800 &amp;&amp; !isSmallAdd) {
+        document.getElementById('rightSection').classList.add('d-none');
+        document.getElementById('create1').classList.remove('d-none');
+        isSmallAdd = true;
+    } if (window.innerWidth > 800 &amp;&amp; isSmallAdd) {
+        document.getElementById('rightSection').classList.remove('d-none');
+        document.getElementById('create1').classList.add('d-none');
+        isSmallAdd = false;
+    }
+}
+
+/**
+ * Handles wheather the size of the screen is fullsize or not
+ */
+function sizeAction() {
+    if (window.innerWidth > 800) {
+        isSmallAdd = false;
+
+    } else {
+        isSmallAdd = true;
+        document.getElementById('rightSection').classList.add('d-none');
+        document.getElementById('create1').classList.remove('d-none');
+    }
+}
+
+/**
+ * Renders the HTML code for a new contact checkbox in the assigmnets selection.
+ * called in addAssignment(add)
+ * 
+ * @param {Object} elem    A JSON objects, that represents a contact
+ * @param {string} add          'Edit' add a new contact to the checkboxes in the assignment selection of a task in Edit-mode. When its '' its called in add-task mode
+ */
+
+function addContact(elem, add) {
+    let t = ` &lt;div class="selectGapArrow" onclick="stoppen(event)">
+    &lt;label style="cursor:pointer"  for="selCont${add + '' + elem['id']}">${elem['name']}&lt;/label>
+    &lt;input check${add} type="checkbox" id="selCont${add + '' + elem['id']}" name="${elem['name']}" style="cursor:pointer" />
+    &lt;/div>`;
+    let cont = document.getElementById('assignmentChoices' + add).innerHTML;
+    document.getElementById('assignmentChoices' + add).innerHTML = '' + t + cont;
+    if (add == 'Edit') { document.getElementById(`selCont${add + '' + elem['id']}`).checked = true; }
+
+}
+
+/**
+ * 
+ * @param {String} name Name of a  contact
+ * @returns             return a JSON Object of a contacts with the given name (with attribute 'check')
+ */
+function getMemberByName(name) {
+    let ret = {};
+    dummyContacts.forEach(cont => {
+        if (cont['name'] == name) { ret = cont; }
+    });
+    return ret;
+}
+
+
+/**
+ * Renders the assigned members in the Add Task dialog
+ * 
+ * @param {String} id           id of the &lt;div> that schould contain the Member
+ * @param {Nodes} checkboxes    All checkboxes the the assigned Member selection
+ */
+function renderMemberAddTask(id, checkboxes) {
+
+    let memberArea = document.getElementById(id);
+    let memberList = [];
+    checkboxes.forEach(elem => {
+        if (elem.checked) {
+            memberList.push(getMemberByName(elem.name));
+        }
+    });
+    let l = 0;
+    memberArea.innerHTML = "";
+    memberList.forEach(element => {
+
+        memberArea.innerHTML += ` &lt;div style="display: flex; gap:25px;align-items: center;">
+        &lt;div class="memberDialog" style=" background-color: ${element['iconColor']};">${element['short']}&lt;/div>       
+       &lt;/div>`;
+        l++;
+    });
+}
+
+//-------------------------------------------------------set Task categorys-------------------------------------------
+
+/**
+ * Chooses the given category (name and color) and displays it in the head closed selection.
+ * 
+ * @param {string} cat          name of the new category
+ * @param {event} event         stops the call of the function of the enclosing div container
+ */
+function setCategory(cat, event) {
+    stoppen(event);
+    chosenCategory = cat;
+    categoryColor = getTypeColorAddTask(cat);
+    expandedCategory = false;
+    let color = getTypeColorAddTask(chosenCategory);
+    document.getElementById('selectionCategory').innerHTML = `&lt;div class="selectionChoice"  value=${chosenCategory}>${chosenCategory} &lt;div class="circle"  style="background-color:${color} ">&lt;/div>&lt;/div>`;
+}
+
+/**
+ * * 
+ * @param {string} key Key of the Colors stored on the remote server
+ * @returns             JSON Array with the colors and names of the cateories
+ */
+async function getColor(key) {
+    const url = `${STORAGE_URL}?key=${key}&amp;token=${STORAGE_TOKEN}`;
+    colorsCategory = await fetch(url).then(resp => resp.json()).then(resp => resp.data.value);
+    return colorsCategory;
+}
+
+/** 
+ * Saves a JSON Array with the colors and names of each category and stores it in the variable colorsCategory
+ *   
+ */
+async function loadRemoteColor() {
+    try {
+        await getColor('category');
+        colorsCategory = JSON.parse(colorsCategory.replaceAll('\'', '"'));
+        return colorsCategory;
+    } catch (e) {
+        console.info('Could not found tasks');
+    }
+}
+
+/**
+ * Renders a new Category on the Category selection
+ * 
+ * @param {*} event     stops the call of the function of the enclosing div container  
+ */
+function renderInputCategory(event) {
+    event.stopPropagation();
+    document.getElementById('colorChoice').classList.remove('d-none');
+    document.getElementById('selectionCategory').innerHTML =
+        `&lt;div style="display:flex;justify-content: space-between;" onclick="stoppen(event)">&lt;input style="padding-left:21px" placeholder="new catagory" id="newCategory" class="mailContact" >
+    &lt;div style="margin-right:5px;justify-content: space-between;">
+        &lt;img  src="../img/cross.svg" onclick="showCategory()">
+        &lt;img  src="../img/checkWhiteBackground.svg" style="width:25px; border-left: solid grey 1px; padding-left: 3px;" onclick="newCategoryChoosen()">
+    &lt;/div>&lt;/div>`;
+    document.getElementById('selectionCategory').classList.add('noBackgroundImage');
+}
+
+/**
+ * creates a new Category with the earlier choosen  color and the name given in the input field
+ * 
+ */
+function newCategoryChoosen() {
+    chosenCategory = document.getElementById('newCategory').value;
+    if (chosenCategory != "") {
+        newCategory += `&lt;div class="selectionChoice" onclick="setCategory('${chosenCategory}',event)" value="${chosenCategory}">${chosenCategory}&lt;div class="circle"  style="background-color:${categoryColor} ">&lt;/div>&lt;/div>`;
+        let elem = { "name": '' + chosenCategory, "color": '' + categoryColor };
+        colorsCategory.push(elem);
+        expandedCategory = false;
+        showCategory(categoryColor);
+        setTask('category', colorsCategory);
+        document.getElementById('colorChoice').classList.add('d-none');
+    }
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+/**
+ * Removes the White Bold color of all the prioIcons
+ * 
+ * @param {String} prioLetter text of prio Icon
+ * @param {String} prioIcon   image of proIcon
+ */
+function setPrioWhiteColor(prioLetter, prioIcon) {
+    document.getElementById(prioLetter + '0').classList.remove('iconWhite');
+    document.getElementById(prioIcon + '0').classList.remove('bold');
+    document.getElementById(prioLetter + '1').classList.remove('iconWhite');
+    document.getElementById(prioIcon + '1').classList.remove('bold');
+    document.getElementById(prioLetter + '2').classList.remove('iconWhite');
+    document.getElementById(prioIcon + '2').classList.remove('bold');
+}
+
+/**
+ * Sets the background of all propicons white.
+ * 
+ * @param {String} prioIcon Id of the prioIcon
+ */
+function setBackgroundWhite(prioIcon) {
+    document.getElementById(prioIcon + '0').style.backgroundColor = 'white';
+    document.getElementById(prioIcon + '1').style.backgroundColor = 'white';
+    document.getElementById(prioIcon + '2').style.backgroundColor = 'white';
+}
+
+
+/**
+ * Returns information how to display the icon of the priority of a task
+ * 
+ * @param {string} priority     priority of a task
+ * @returns                     Array with 3 strings [priority,path of the iconimage,color of the priority icon]
+ */
+function calculatePrioAddTask(priority) {
+    let prioInfo = []
+    switch (priority) {
+        case '2':
+            prioInfo.push('Low');
+            prioInfo.push('../img/arrow.svg');
+            prioInfo.push('#7be300');
+            break;
+        case '1':
+            prioInfo.push('Medium');
+            prioInfo.push('../img/equal.svg');
+            prioInfo.push('#ffea00');
+            break;
+        case '0':
+            prioInfo.push('Urgent');
+            prioInfo.push('../img/arrowUpWhite.svg');
+            prioInfo.push('#FF3D00');
+            break;
+    }
+    return prioInfo;
+}
+
+/**
+ * Renders all categories in the selection, when the selection is opened
+ */
+function showCategory() {
+    let cat = `${categoryTitle} ${newCategoryField}`;
+
+    // checkboxes = form.querySelectorAll('input[type=checkbox]');
+    if (!expandedCategory) {
+        colorsCategory.forEach(c => {
+            cat += `
+            &lt;div class="selectionChoice" onclick="setCategory('${c['name']}',event)" value="${c['name']}">${c['name']} &lt;div class="circle"  style="background-color:${c['color']} ">&lt;/div>&lt;/div>`;
+        })
+
+        document.getElementById('selectionCategory').innerHTML = cat;
+        expandedCategory = true;
+    } else {
+        document.getElementById('selectionCategory').innerHTML = categoryTitle;
+        expandedCategory = false;
+        document.getElementById('selectionCategory').classList.remove('noBackgroundImage');
+        document.getElementById('colorChoice').classList.add('d-none');
+    }
+}
+//-------------------------------------------------------- check validity------------------------------------------------------------
+/**
+ * checks the validity of the assignments checkboxes (at least one need to be selected)
+ * 
+ * @param {string} id       id of the form object
+ * @param {string} query    the attribut that all the relevant checkboxes contain
+ */
+function checkboxValidation(id, query) {
+    const form = document.getElementById(id);
+    checkboxes = form.querySelectorAll(query);
+    firstCheckbox = checkboxes.length > 0 ? checkboxes[0] : null;
+    checkValidity();
+}
+/**
+ * 
+ * @returns  is at least one checkbox selected
+ */
+function isChecked() {
+    for (let i = 0; i &lt; checkboxes.length; i++) {
+        if (checkboxes[i].checked) {
+            checked = true;
+            return true;
+        }
+    }
+    checked = false;
+    return false;
+}
+
+/**
+ * If no checkbox of the assignements is selected, it blend in an error message 'At least one checkbox must be selected.' at the first checkbox.
+ */
+function checkValidity() {
+    const errorMessage = !isChecked() ? 'At least one checkbox must be selected.' : '';
+
+    firstCheckbox.setCustomValidity(errorMessage);
+    firstCheckbox.reportValidity(); // ist wichtig, dass es angezeigt wird
+    setTimeout(clearfirst, 1500);
+}
+/**
+ * deletes the error message at the first checkbox
+ */
+function clearfirst() {
+    firstCheckbox.setCustomValidity('');
+}
+
+//----------------------------------------------------------------Subtasks----------------------------------------------------------------
+
+/**
+ * Adds the subtak that is written in the subtask input-field to the checkbox area of the subtasks
+ */
+function addSubtask() {
+    let sub = document.getElementById('subtask').value;
+    let checkedList = [];
+    for (let i = 1; i &lt; numberSubtasks; i++) {
+        if (document.getElementById(`subtask${i}`).checked){
+            checkedList.push(i);
+        }
+    }
+    if (!sub == "") {
+        let t = ` &lt;div>
+        &lt;input subtasks type="checkbox" name="${sub}" id="subtask${numberSubtasks}">
+        &lt;label id="checktext" checked for="subtask${numberSubtasks}">${sub}&lt;/label>
+    &lt;/div>`;
+        document.getElementById('subtasksArea').innerHTML += t;
+    }
+    document.getElementById('subtask').value = "";
+    for (let i = 0; i &lt;checkedList.length; i++) { document.getElementById(`subtask${checkedList[i]}`).checked = true; }
+    document.getElementById(`subtask${numberSubtasks}`).checked = true;
+    numberSubtasks++;
+}
+
+/**
+ * 
+ * @returns returns a list with the names of the subtasks, that are assigned to the currently created task
+ */
+function setSubtasks() {
+    let form = document.getElementById('form');
+    let subTasks = form.querySelectorAll('[subtasks]');
+    subtasks = [];
+    subTasks.forEach(element => {
+        if (element.checked) {
+            subtasks.push(element.name);
+        }
+    });
+    return subtasks;
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#addAssignment">addAssignment</a></li><li><a href="global.html#addContact">addContact</a></li><li><a href="global.html#addContactEdit">addContactEdit</a></li><li><a href="global.html#addDummyContacts">addDummyContacts</a></li><li><a href="global.html#addNameToHref">addNameToHref</a></li><li><a href="global.html#addSubEdit">addSubEdit</a></li><li><a href="global.html#addSubtask">addSubtask</a></li><li><a href="global.html#addSubtaskEdit">addSubtaskEdit</a></li><li><a href="global.html#addSubtaskToTasks">addSubtaskToTasks</a></li><li><a href="global.html#addUser">addUser</a></li><li><a href="global.html#backToBoardFromedit">backToBoardFromedit</a></li><li><a href="global.html#buttonVisibility">buttonVisibility</a></li><li><a href="global.html#calculatePrio">calculatePrio</a></li><li><a href="global.html#calculatePrioAddTask">calculatePrioAddTask</a></li><li><a href="global.html#changeSelect">changeSelect</a></li><li><a href="global.html#checkEmailExists">checkEmailExists</a></li><li><a href="global.html#checkPassword">checkPassword</a></li><li><a href="global.html#checkValidity">checkValidity</a></li><li><a href="global.html#checkboxValidation">checkboxValidation</a></li><li><a href="global.html#checkedContacts">checkedContacts</a></li><li><a href="global.html#chooseColor">chooseColor</a></li><li><a href="global.html#clearInput">clearInput</a></li><li><a href="global.html#clearfirst">clearfirst</a></li><li><a href="global.html#clickLoop">clickLoop</a></li><li><a href="global.html#closeDialog">closeDialog</a></li><li><a href="global.html#closePopUpWindow">closePopUpWindow</a></li><li><a href="global.html#closeTask">closeTask</a></li><li><a href="global.html#createTask">createTask</a></li><li><a href="global.html#createTaskDetails">createTaskDetails</a></li><li><a href="global.html#createTaskHTML">createTaskHTML</a></li><li><a href="global.html#crossAddTask">crossAddTask</a></li><li><a href="global.html#deleteContact">deleteContact</a></li><li><a href="global.html#deleteTask">deleteTask</a></li><li><a href="global.html#displayRegistrationSuccess">displayRegistrationSuccess</a></li><li><a href="global.html#displayTaskDetailsEdit">displayTaskDetailsEdit</a></li><li><a href="global.html#editContact">editContact</a></li><li><a href="global.html#editTask">editTask</a></li><li><a href="global.html#editTaskCorrectForm">editTaskCorrectForm</a></li><li><a href="global.html#editdialog">editdialog</a></li><li><a href="global.html#filterExistingAssignments">filterExistingAssignments</a></li><li><a href="global.html#filterTask">filterTask</a></li><li><a href="global.html#getActiveTasks">getActiveTasks</a></li><li><a href="global.html#getAmountMadeSubs">getAmountMadeSubs</a></li><li><a href="global.html#getAssignmentsEdit">getAssignmentsEdit</a></li><li><a href="global.html#getColor">getColor</a></li><li><a href="global.html#getContact">getContact</a></li><li><a href="global.html#getHTMLSubtasksinDetails">getHTMLSubtasksinDetails</a></li><li><a href="global.html#getHTMLTaskDetails">getHTMLTaskDetails</a></li><li><a href="global.html#getInviteNewAssignment">getInviteNewAssignment</a></li><li><a href="global.html#getItem">getItem</a></li><li><a href="global.html#getItemRegister">getItemRegister</a></li><li><a href="global.html#getJSONContact">getJSONContact</a></li><li><a href="global.html#getMemberByName">getMemberByName</a></li><li><a href="global.html#getNewUserFromInputs">getNewUserFromInputs</a></li><li><a href="global.html#getNotTask">getNotTask</a></li><li><a href="global.html#getPasswordResetUser">getPasswordResetUser</a></li><li><a href="global.html#getTasks">getTasks</a></li><li><a href="global.html#getTimeandGreets">getTimeandGreets</a></li><li><a href="global.html#getTypeColorAddTask">getTypeColorAddTask</a></li><li><a href="global.html#giveTask">giveTask</a></li><li><a href="global.html#handleAddTaskHTML">handleAddTaskHTML</a></li><li><a href="global.html#handleCreateTaskCorrectForm">handleCreateTaskCorrectForm</a></li><li><a href="global.html#handleDialog">handleDialog</a></li><li><a href="global.html#includeHTML">includeHTML</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#initBoard">initBoard</a></li><li><a href="global.html#initIndex">initIndex</a></li><li><a href="global.html#initSummary">initSummary</a></li><li><a href="global.html#isAllreadyInSelection">isAllreadyInSelection</a></li><li><a href="global.html#isAreaEmpty">isAreaEmpty</a></li><li><a href="global.html#isChecked">isChecked</a></li><li><a href="global.html#isContactExisting">isContactExisting</a></li><li><a href="global.html#isFull">isFull</a></li><li><a href="global.html#loadBasics">loadBasics</a></li><li><a href="global.html#loadBasicsAddTask">loadBasicsAddTask</a></li><li><a href="global.html#loadContacts">loadContacts</a></li><li><a href="global.html#loadData">loadData</a></li><li><a href="global.html#loadRemote">loadRemote</a></li><li><a href="global.html#loadRemoteColor">loadRemoteColor</a></li><li><a href="global.html#loadUsers">loadUsers</a></li><li><a href="global.html#loadUsersAll">loadUsersAll</a></li><li><a href="global.html#loadUsersRegister">loadUsersRegister</a></li><li><a href="global.html#loginUser">loginUser</a></li><li><a href="global.html#movePopUp">movePopUp</a></li><li><a href="global.html#movePos">movePos</a></li><li><a href="global.html#moveState">moveState</a></li><li><a href="global.html#moveTo">moveTo</a></li><li><a href="global.html#newCategoryChoosen">newCategoryChoosen</a></li><li><a href="global.html#newContact">newContact</a></li><li><a href="global.html#newPassword">newPassword</a></li><li><a href="global.html#openAddTask">openAddTask</a></li><li><a href="global.html#openAddTaskSmallScreen">openAddTaskSmallScreen</a></li><li><a href="global.html#openBoard">openBoard</a></li><li><a href="global.html#openGuestLogin">openGuestLogin</a></li><li><a href="global.html#openSubtasks">openSubtasks</a></li><li><a href="global.html#openTask">openTask</a></li><li><a href="global.html#preventLoadNew">preventLoadNew</a></li><li><a href="global.html#prioImage">prioImage</a></li><li><a href="global.html#readQueryParameters">readQueryParameters</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#removeBottom">removeBottom</a></li><li><a href="global.html#removePopUP">removePopUP</a></li><li><a href="global.html#renderContacts">renderContacts</a></li><li><a href="global.html#renderInputCategory">renderInputCategory</a></li><li><a href="global.html#renderMember">renderMember</a></li><li><a href="global.html#renderMemberAddTask">renderMemberAddTask</a></li><li><a href="global.html#renderMemberDialog">renderMemberDialog</a></li><li><a href="global.html#renderNoTaskLabel">renderNoTaskLabel</a></li><li><a href="global.html#renderTasks">renderTasks</a></li><li><a href="global.html#resetForm">resetForm</a></li><li><a href="global.html#resizeListener">resizeListener</a></li><li><a href="global.html#resizeListenerAddTask">resizeListenerAddTask</a></li><li><a href="global.html#resizeListenerContacts">resizeListenerContacts</a></li><li><a href="global.html#resizeListernerToFull">resizeListernerToFull</a></li><li><a href="global.html#resizeListernerToSmall">resizeListernerToSmall</a></li><li><a href="global.html#responsiveContactDetailsBackButton">responsiveContactDetailsBackButton</a></li><li><a href="global.html#returnFromAddTask">returnFromAddTask</a></li><li><a href="global.html#saveContactChanges">saveContactChanges</a></li><li><a href="global.html#saveMe">saveMe</a></li><li><a href="global.html#selectPrio">selectPrio</a></li><li><a href="global.html#setBackgroundWhite">setBackgroundWhite</a></li><li><a href="global.html#setCategory">setCategory</a></li><li><a href="global.html#setColorEdit">setColorEdit</a></li><li><a href="global.html#setDataToStorage">setDataToStorage</a></li><li><a href="global.html#setItem">setItem</a></li><li><a href="global.html#setItemRegister">setItemRegister</a></li><li><a href="global.html#setMadeSmall">setMadeSmall</a></li><li><a href="global.html#setNameToHrefs">setNameToHrefs</a></li><li><a href="global.html#setPrioWhiteColor">setPrioWhiteColor</a></li><li><a href="global.html#setSubtasks">setSubtasks</a></li><li><a href="global.html#setTask">setTask</a></li><li><a href="global.html#showAssignmentCheckboxesEdit">showAssignmentCheckboxesEdit</a></li><li><a href="global.html#showCategory">showCategory</a></li><li><a href="global.html#showCategoryPrevent">showCategoryPrevent</a></li><li><a href="global.html#showCheckboxes">showCheckboxes</a></li><li><a href="global.html#showContactDetails">showContactDetails</a></li><li><a href="global.html#showPopUpWindowNewContact">showPopUpWindowNewContact</a></li><li><a href="global.html#sizeAction">sizeAction</a></li><li><a href="global.html#startDragging">startDragging</a></li><li><a href="global.html#stoppen">stoppen</a></li><li><a href="global.html#taskHTMLCode">taskHTMLCode</a></li><li><a href="global.html#tasksForSummary">tasksForSummary</a></li><li><a href="global.html#uncheckAll">uncheckAll</a></li><li><a href="global.html#unshowCheckboxesEdit">unshowCheckboxesEdit</a></li><li><a href="global.html#urgentTask">urgentTask</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Sat Sep 09 2023 17:45:10 GMT+0200 (Mitteleuropäische Sommerzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

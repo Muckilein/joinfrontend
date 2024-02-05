@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: contacts.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: contacts.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>let madeSmall;//madeSmall= true, when we went from fullscreen to smallscreen, false, when we went from smallcreen to fullscreen
+let actualContact;
+let detailDialog = false;
+let colorsIcon = ['#FF7A00', '#9327FF', '#29ABE2', '#FC71FF', '#02CF2F', '#AF1616', '#462F8A', '#FFC700', '#0223cf'];
+let nameUser = "";
+setMadeSmall();
+window.addEventListener("resize", resizeListenerContacts);
+
+/**
+ * sets the initial values for madeSmall
+ */
+function setMadeSmall() {
+  if (window.innerWidth &lt;= 800) {
+    madeSmall = true;
+  } else { madeSmall = false; }
+}
+
+/**
+ * Used, wenn wie resize from &lt;=800 to &lt;800 and back
+ */
+function resizeListenerContacts() {
+  if (window.innerWidth &lt;= 800 &amp;&amp; !madeSmall) {
+    madeSmall = true;
+    document.getElementById('contactsContainer').style.display = 'none';
+  }
+
+  if (window.innerWidth > 800 &amp;&amp; madeSmall) {
+    madeSmall = false;
+    if (detailDialog) {
+      responsiveContactDetailsBackButton();
+    } else {
+      document.getElementById('contactsContainer').style.display = 'block';
+    }
+  }
+}
+
+/**
+ * Give contacts a value and load every created contact from the Server
+ */
+
+async function loadContacts() {
+  try {
+    const response = await getItem('contacts');
+    if (response &amp;&amp; response.data &amp;&amp; response.data.value) {
+      contacts = JSON.parse(response.data.value).sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      contacts = []; // Fallback, wenn die Server-Antwort kein gültiges JSON enthält
+    }
+  } catch (error) {
+    console.error('Error loading contacts:', error);
+    contacts = []; // Fallback, wenn ein Fehler beim Laden der Kontakte auftritt
+  }
+}
+
+/**
+ * This function is an onload function. It will render every contact, from the server. And will only stop when 
+ * the length from contacts(array) is reached. It will also create the seperator and letters and sort it 
+ * alphabetical. LettersHtml and contactListHtml is a created function only for returning the HTML part.
+ */
+async function renderContacts() {
+  await loadContacts();
+
+  let containerContactlist = document.getElementById('contactList');
+  containerContactlist.innerHTML = "";
+
+  for (let i = 0; i &lt; contacts.length; i++) {
+    let contact = contacts[i];
+    let currentLetter = contact['name'].charAt(0).toUpperCase();
+    let prevLetter = i > 0 ? contacts[i - 1]['name'].charAt(0).toUpperCase() : null;
+
+    if (currentLetter !== prevLetter) {
+      containerContactlist.innerHTML += lettersHtml(currentLetter);
+      generatedLetters.push(currentLetter);
+    }
+    containerContactlist.innerHTML += contactListHtml(contact, i);
+  }
+  setTimeout(addNameToHref, 500);
+}
+
+/**
+ * Make the name of the current user available in all tabs
+ */
+async function addNameToHref() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const msg = urlParams.get('name');
+
+  if (msg) {
+    nameUser = msg;
+
+  }
+  setNameToHrefs(nameUser);
+}
+
+/**
+ * First it will get the value from the inputfields. After that it will split the first letter from the first- and 
+ * secondname. After that it will create the short-Icon. Max Mustermann -> MM . After that it will push everything
+ * in the current place from the contacts-array and save so the changes.
+ */
+async function saveContactChanges(i) {
+
+  let name = document.getElementById('changeName').value;
+  let email = document.getElementById('changeEmail').value;
+  let phone = document.getElementById('changePhone').value;
+  let firstName = name.trim().split(' ')[0]; // Erster Name
+  let lastName = name.trim().split(' ')[1]; // Nachname
+  let short = (firstName ? firstName.charAt(0) : '') + (lastName ? lastName.charAt(0) : '');
+  contacts[i].name = name;
+  contacts[i].email = email;
+  contacts[i].phone = phone;
+  contacts[i].short = short;
+
+  await setItem('contacts', JSON.stringify(contacts));
+
+  let newContact = document.getElementById('newContact');
+  newContact.classList.add('d-none');
+  showContactDetails(i);
+  renderContacts();
+}
+
+/**
+ * This will delete the selected contact from the array contacts.
+ */
+async function deleteContact(i) {
+  contacts.splice(i, 1);
+  await setItem('contacts', JSON.stringify(contacts));
+  let newContact = document.getElementById('newContact');
+  newContact.classList.add('d-none');
+  document.getElementById('resetName').innerHTML = "";
+  document.getElementById('resetInfo').innerHTML = "";
+  document.getElementById('resetEmailPhone').innerHTML = "";
+  await renderContacts();
+  document.getElementById('contactList').classList.remove('d-none');
+  document.getElementById('responsiveButton').classList.remove('d-none');
+  document.getElementById('responsiveHeadlinePhrase').classList.add('d-none');
+  document.getElementById('responsiveDelete').classList.add('d-none');
+  document.getElementById('responsiveEdit').classList.add('d-none');
+  document.getElementById('backArrowResponsive').classList.add('d-none');  
+}
+
+/**
+ * First it checks the validity from the inputfields, after that it will save the created contact in contacts
+ * and push it into the remote server.
+ */
+async function newContact() {
+  let name = document.getElementById('newName').value;
+  let email = document.getElementById('newEmail').value;
+  let phone = document.getElementById('newPhone').value;
+  let form = document.querySelector('form');
+  let iconColor = colorsIcon[(contacts.length) % 9];
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+  // get the first letter from firstName and lastName
+  let firstName = name.trim().split(' ')[0];
+  let lastName = name.trim().split(' ')[1];
+  let short = (firstName ? firstName.charAt(0) : '') + (lastName ? lastName.charAt(0) : '');
+  let contact = {
+    name,
+    email,
+    phone,
+    short,
+    iconColor,
+  };
+  contacts.push(contact); 
+  await setItem('contacts', JSON.stringify(contacts));
+
+  let newContact = document.getElementById('newContact');
+  newContact.classList.add('d-none');
+  renderContacts();
+}
+
+/**
+ * Show the current clicked contact and give details about it.
+ */
+function showContactDetails(i) {
+  console.log('callshow');
+  actualContact = i;
+  let container = document.getElementById('contactDetails');
+  let contact = contacts[i];
+  container.innerHTML = "";
+
+  if (window.innerWidth >= 800) {
+    container.innerHTML = showContactDetailsHtml(contact, i);   
+  } else {
+    detailDialog = true;
+    container.innerHTML = showContactDetailsHtml(contact, i);   
+    contactDetailsSmall();
+  }
+}
+function contactDetailsSmall(){
+  document.getElementById('contactList').classList.add('d-none');
+  document.getElementById('responsiveButton').classList.add('d-none');
+  document.getElementById('responsiveHeadlinePhrase').classList.remove('d-none');
+  document.getElementById('responsiveDelete').classList.remove('d-none');
+  document.getElementById('responsiveEdit').classList.remove('d-none');
+  document.getElementById('backArrowResponsive').classList.remove('d-none')
+  document.getElementById('contactsContainer').style.display = 'block';
+}
+
+/**
+ * Add and remove some classes for the responsive view
+ */
+function responsiveContactDetailsBackButton() {
+  detailDialog = false;
+  document.getElementById('contactList').classList.remove('d-none');
+  document.getElementById('responsiveButton').classList.remove('d-none');
+  document.getElementById('responsiveHeadlinePhrase').classList.add('d-none');
+  document.getElementById('responsiveDelete').classList.add('d-none');
+  document.getElementById('responsiveEdit').classList.add('d-none');
+  document.getElementById('backArrowResponsive').classList.add('d-none')
+  if (window.innerWidth &lt;= 800) { document.getElementById('contactsContainer').style.display = 'none'; }
+}
+
+/**
+ * Show the pop-up window for new contact.
+ */
+function showPopUpWindowNewContact() {
+  let newContact = document.getElementById('newContact');  
+  newContact.classList.remove('d-none');
+  newContact.innerHTML = newContactPopUpHtml();  
+}
+
+/**
+ * close the pop-up window for new contact.
+ */
+function closePopUpWindow() {
+  document.getElementById('newContact').classList.add('d-none');
+}
+
+/**
+ * Show the pop-up window for edit contact.
+ */
+function editContact(i) {
+  let newContact = document.getElementById('newContact');
+  newContact.classList.remove('d-none');
+  newContact.innerHTML = editContactHtml(i);
+}
+
+/**
+ * only show the new contact button for responsive side, when the window is smaller than 800px
+ */
+async function buttonVisibility() {
+  let button = document.getElementById('responsiveButton');
+  if (window.innerWidth &lt; 800) {
+
+    button.classList.remove('d-none');
+    await renderContacts();
+  } else {
+
+    button.classList.add('d-none');
+  }
+}
+
+window.addEventListener('resize', function (event) {
+  buttonVisibility();
+});
+
+function toggleDropdown() {
+  const dropdown = document.getElementById("dropdown");
+  dropdown.classList.toggle("open");
+}
+
+/*-------------------------------HTML-Templates-------------------------*/
+
+function lettersHtml(currentLetter) {
+  return `
+&lt;div class="firstLetterContainer">
+  &lt;span class="firstLetter">${currentLetter}&lt;/span>
+&lt;/div>
+&lt;img src="../img/separator_contacts.svg">
+`
+}
+
+function contactListHtml(contact, i) {
+
+  return `
+    &lt;div class="contactContainer" onclick="showContactDetails(${i})">
+      &lt;div class="profile " style="background-color:${contact['iconColor']}">${contact['short']}&lt;/div>
+      &lt;div class="contact">
+        &lt;div class="name">${contact['name']}&lt;/div>
+        &lt;a  class="email">${contact['email']}&lt;/a>
+      &lt;/div>
+    &lt;/div>
+  `
+}
+
+
+function showContactDetailsHtml(contact, i) {
+  return `
+&lt;div class="nameContainer" id="resetName">
+                      &lt;div class="detailsProfile" style="background-color:${contacts[i]['iconColor']}">${contacts[i]['short']}&lt;/div>
+                      &lt;div class="detailsName">
+                          &lt;h2>${contact['name']}&lt;/h2>
+                          &lt;div class="addTask">
+                          &lt;a href="./add-task.html?name=${nameUser}">&lt;svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  &lt;path d="M8.5 1V16" stroke="#29ABE2" stroke-width="2" stroke-linecap="round"/>
+                                  &lt;path d="M16 8.64148L1 8.64148" stroke="#29ABE2" stroke-width="2" stroke-linecap="round"/>
+                              &lt;/svg>
+                              &lt;span>Add Task&lt;/span>
+                          &lt;/a>
+                          &lt;/div>
+                      &lt;/div>
+                      &lt;/div>
+                  &lt;div class="detailsContactInfo" id="resetInfo">
+                      &lt;div class="contactInfo">Contact Information&lt;/div>
+                      &lt;div class="editContact" onclick="editContact(${i})">
+                          &lt;svg width="21" height="30" viewBox="0 0 21 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              &lt;path d="M2.87121 22.0156L7.69054 24.9405L20.3337 4.10836C20.6203 3.63622 20.4698 3.02119 19.9977 2.73465L16.8881 0.847421C16.4159 0.560878 15.8009 0.71133 15.5144 1.18347L2.87121 22.0156Z" fill="#2A3647"/>
+                              &lt;path d="M2.28614 22.9793L7.10547 25.9042L2.37685 28.1891L2.28614 22.9793Z" fill="#2A3647"/>
+                          &lt;/svg>
+                          &lt;span>Edit Contact&lt;/span>
+                      &lt;/div>
+                  &lt;/div>
+                  &lt;div class="emailPhone" id="resetEmailPhone">
+                      &lt;div class="contactEmail">
+                          &lt;span class="designation">Email&lt;/span>
+                          &lt;a href="mailto:${contact['email']}" class="email">${contact['email']}&lt;/a>
+                      &lt;/div>
+                      &lt;div class="contactPhone">
+                          &lt;span class="designation">Phone&lt;/span>
+                          &lt;span>${contact['phone']}&lt;/span>
+                      &lt;/div>
+                  &lt;/div>
+
+                  &lt;img  onclick="deleteContact(${i})" src="../img/deleteButtonResponsive.png" id="responsiveDelete" class="responsiveButtons respButtDel d-none">
+                  &lt;img onclick="editContact(${i})"src="../img/editButtonResponsive.png"  id="responsiveEdit" class="responsiveButtons respButtEdit d-none">
+                  &lt;img  onclick="responsiveContactDetailsBackButton()" src="../img/backArrowResponsive.png" id="backArrowResponsive" class="responsiveBackArrowButton d-none">
+              &lt;/div>`
+}
+
+function newContactPopUpHtml() {
+  return `
+&lt;div class="newContactContent">
+&lt;div class="newContactContainer">
+  &lt;div class="leftSideNewContactContainer">
+      &lt;img class="contact-logo" src="../img/sidebar-img/logo-sidebar.png">
+      &lt;h2>Add contact&lt;/h2>
+      &lt;p>Tasks are better with a team!&lt;/p>
+      &lt;div class="leftSideNewContactContainerSeperator">&lt;/div>
+  &lt;/div>
+  &lt;div class="rightSideNewContactContainer">
+  
+      &lt;span class="plr60px newIcon">&lt;img class="" src="../img/newContact.png">&lt;/span>
+      &lt;span class="mb-120">
+      &lt;div class="closeAddContactButton" onclick="closePopUpWindow()">&lt;img class="" src="../img/cancelIcon.png">&lt;/div>
+          &lt;form id"formContact" onsubmit="newContact();return false;">
+              &lt;input type="text"  id="newName" class="avatarIcon" placeholder="Name" required>
+              &lt;input type="email" id="newEmail" class="emailIcon" placeholder="Email" required>
+              &lt;input type="number" id="newPhone" class="phoneIcon" placeholder="Phone">
+          &lt;div class="buttonContainer">
+          &lt;button class="cancelButton" onclick="closePopUpWindow()">Cancel &lt;img class="" src="../img/cancelIcon.png">&lt;/button>
+          &lt;button  type="submit" class="createButton" >Create contact &lt;img class="" src="../img/createAccIcon.png"> &lt;/button>
+          &lt;/form>
+          &lt;/div>
+      &lt;/span>
+  &lt;/div>
+&lt;/div>
+&lt;/div>
+`
+}
+
+function editContactHtml(i) {
+  return `
+&lt;div class="newContactContent">
+&lt;div class="newContactContainer">
+    &lt;div class="leftSideNewContactContainer">
+        &lt;img class="contact-logo" src="../img/sidebar-img/logo-sidebar.png">
+        &lt;h2>Edit contact&lt;/h2>
+        &lt;div class="leftSideNewContactContainerSeperator">&lt;/div>
+    &lt;/div>
+    &lt;div class="rightSideNewContactContainer h450">
+    
+        &lt;span class="editContactAvatar " style="background-color:${contacts[i]['iconColor']}">${contacts[i]['short']}&lt;/span>
+        &lt;span class="mb-30 pt60">
+        &lt;div class="closeAddContactButton" onclick="closePopUpWindow()">&lt;img class="" src="../img/cancelIcon.png">&lt;/div>
+            &lt;form id="edCont" onsubmit="saveContactChanges(${i});return false;">
+                &lt;input required type="text" id="changeName" class="avatarIcon" placeholder="Name" value="${contacts[i]['name']}">
+                &lt;input required type="email" id="changeEmail" class="emailIcon" placeholder="Email" value="${contacts[i]['email']}">
+                &lt;input type="number" id="changePhone" class="phoneIcon" placeholder="Phone" value="${contacts[i]['phone']}">
+            &lt;/form>
+            &lt;div class="buttonContainer">
+            &lt;button class="cancelButton" onclick="deleteContact(${i})">Delete&lt;/button>
+            &lt;button form="edCont" type="submit" class="createButton">Save&lt;/button>
+            &lt;/div>
+        &lt;/span>
+    &lt;/div>
+&lt;/div>
+&lt;/div>
+`
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#addAssignment">addAssignment</a></li><li><a href="global.html#addContact">addContact</a></li><li><a href="global.html#addContactEdit">addContactEdit</a></li><li><a href="global.html#addDummyContacts">addDummyContacts</a></li><li><a href="global.html#addNameToHref">addNameToHref</a></li><li><a href="global.html#addSubEdit">addSubEdit</a></li><li><a href="global.html#addSubtask">addSubtask</a></li><li><a href="global.html#addSubtaskEdit">addSubtaskEdit</a></li><li><a href="global.html#addSubtaskToTasks">addSubtaskToTasks</a></li><li><a href="global.html#addUser">addUser</a></li><li><a href="global.html#backToBoardFromedit">backToBoardFromedit</a></li><li><a href="global.html#buttonVisibility">buttonVisibility</a></li><li><a href="global.html#calculatePrio">calculatePrio</a></li><li><a href="global.html#calculatePrioAddTask">calculatePrioAddTask</a></li><li><a href="global.html#changeSelect">changeSelect</a></li><li><a href="global.html#checkEmailExists">checkEmailExists</a></li><li><a href="global.html#checkPassword">checkPassword</a></li><li><a href="global.html#checkValidity">checkValidity</a></li><li><a href="global.html#checkboxValidation">checkboxValidation</a></li><li><a href="global.html#checkedContacts">checkedContacts</a></li><li><a href="global.html#chooseColor">chooseColor</a></li><li><a href="global.html#clearInput">clearInput</a></li><li><a href="global.html#clearfirst">clearfirst</a></li><li><a href="global.html#clickLoop">clickLoop</a></li><li><a href="global.html#closeDialog">closeDialog</a></li><li><a href="global.html#closePopUpWindow">closePopUpWindow</a></li><li><a href="global.html#closeTask">closeTask</a></li><li><a href="global.html#createTask">createTask</a></li><li><a href="global.html#createTaskDetails">createTaskDetails</a></li><li><a href="global.html#createTaskHTML">createTaskHTML</a></li><li><a href="global.html#crossAddTask">crossAddTask</a></li><li><a href="global.html#deleteContact">deleteContact</a></li><li><a href="global.html#deleteTask">deleteTask</a></li><li><a href="global.html#displayRegistrationSuccess">displayRegistrationSuccess</a></li><li><a href="global.html#displayTaskDetailsEdit">displayTaskDetailsEdit</a></li><li><a href="global.html#editContact">editContact</a></li><li><a href="global.html#editTask">editTask</a></li><li><a href="global.html#editTaskCorrectForm">editTaskCorrectForm</a></li><li><a href="global.html#editdialog">editdialog</a></li><li><a href="global.html#filterExistingAssignments">filterExistingAssignments</a></li><li><a href="global.html#filterTask">filterTask</a></li><li><a href="global.html#getActiveTasks">getActiveTasks</a></li><li><a href="global.html#getAmountMadeSubs">getAmountMadeSubs</a></li><li><a href="global.html#getAssignmentsEdit">getAssignmentsEdit</a></li><li><a href="global.html#getColor">getColor</a></li><li><a href="global.html#getContact">getContact</a></li><li><a href="global.html#getHTMLSubtasksinDetails">getHTMLSubtasksinDetails</a></li><li><a href="global.html#getHTMLTaskDetails">getHTMLTaskDetails</a></li><li><a href="global.html#getInviteNewAssignment">getInviteNewAssignment</a></li><li><a href="global.html#getItem">getItem</a></li><li><a href="global.html#getItemRegister">getItemRegister</a></li><li><a href="global.html#getJSONContact">getJSONContact</a></li><li><a href="global.html#getMemberByName">getMemberByName</a></li><li><a href="global.html#getNewUserFromInputs">getNewUserFromInputs</a></li><li><a href="global.html#getNotTask">getNotTask</a></li><li><a href="global.html#getPasswordResetUser">getPasswordResetUser</a></li><li><a href="global.html#getTasks">getTasks</a></li><li><a href="global.html#getTimeandGreets">getTimeandGreets</a></li><li><a href="global.html#getTypeColorAddTask">getTypeColorAddTask</a></li><li><a href="global.html#giveTask">giveTask</a></li><li><a href="global.html#handleAddTaskHTML">handleAddTaskHTML</a></li><li><a href="global.html#handleCreateTaskCorrectForm">handleCreateTaskCorrectForm</a></li><li><a href="global.html#handleDialog">handleDialog</a></li><li><a href="global.html#includeHTML">includeHTML</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#initBoard">initBoard</a></li><li><a href="global.html#initIndex">initIndex</a></li><li><a href="global.html#initSummary">initSummary</a></li><li><a href="global.html#isAllreadyInSelection">isAllreadyInSelection</a></li><li><a href="global.html#isAreaEmpty">isAreaEmpty</a></li><li><a href="global.html#isChecked">isChecked</a></li><li><a href="global.html#isContactExisting">isContactExisting</a></li><li><a href="global.html#isFull">isFull</a></li><li><a href="global.html#loadBasics">loadBasics</a></li><li><a href="global.html#loadBasicsAddTask">loadBasicsAddTask</a></li><li><a href="global.html#loadContacts">loadContacts</a></li><li><a href="global.html#loadData">loadData</a></li><li><a href="global.html#loadRemote">loadRemote</a></li><li><a href="global.html#loadRemoteColor">loadRemoteColor</a></li><li><a href="global.html#loadUsers">loadUsers</a></li><li><a href="global.html#loadUsersAll">loadUsersAll</a></li><li><a href="global.html#loadUsersRegister">loadUsersRegister</a></li><li><a href="global.html#loginUser">loginUser</a></li><li><a href="global.html#movePopUp">movePopUp</a></li><li><a href="global.html#movePos">movePos</a></li><li><a href="global.html#moveState">moveState</a></li><li><a href="global.html#moveTo">moveTo</a></li><li><a href="global.html#newCategoryChoosen">newCategoryChoosen</a></li><li><a href="global.html#newContact">newContact</a></li><li><a href="global.html#newPassword">newPassword</a></li><li><a href="global.html#openAddTask">openAddTask</a></li><li><a href="global.html#openAddTaskSmallScreen">openAddTaskSmallScreen</a></li><li><a href="global.html#openBoard">openBoard</a></li><li><a href="global.html#openGuestLogin">openGuestLogin</a></li><li><a href="global.html#openSubtasks">openSubtasks</a></li><li><a href="global.html#openTask">openTask</a></li><li><a href="global.html#preventLoadNew">preventLoadNew</a></li><li><a href="global.html#prioImage">prioImage</a></li><li><a href="global.html#readQueryParameters">readQueryParameters</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#removeBottom">removeBottom</a></li><li><a href="global.html#removePopUP">removePopUP</a></li><li><a href="global.html#renderContacts">renderContacts</a></li><li><a href="global.html#renderInputCategory">renderInputCategory</a></li><li><a href="global.html#renderMember">renderMember</a></li><li><a href="global.html#renderMemberAddTask">renderMemberAddTask</a></li><li><a href="global.html#renderMemberDialog">renderMemberDialog</a></li><li><a href="global.html#renderNoTaskLabel">renderNoTaskLabel</a></li><li><a href="global.html#renderTasks">renderTasks</a></li><li><a href="global.html#resetForm">resetForm</a></li><li><a href="global.html#resizeListener">resizeListener</a></li><li><a href="global.html#resizeListenerAddTask">resizeListenerAddTask</a></li><li><a href="global.html#resizeListenerContacts">resizeListenerContacts</a></li><li><a href="global.html#resizeListernerToFull">resizeListernerToFull</a></li><li><a href="global.html#resizeListernerToSmall">resizeListernerToSmall</a></li><li><a href="global.html#responsiveContactDetailsBackButton">responsiveContactDetailsBackButton</a></li><li><a href="global.html#returnFromAddTask">returnFromAddTask</a></li><li><a href="global.html#saveContactChanges">saveContactChanges</a></li><li><a href="global.html#saveMe">saveMe</a></li><li><a href="global.html#selectPrio">selectPrio</a></li><li><a href="global.html#setBackgroundWhite">setBackgroundWhite</a></li><li><a href="global.html#setCategory">setCategory</a></li><li><a href="global.html#setColorEdit">setColorEdit</a></li><li><a href="global.html#setDataToStorage">setDataToStorage</a></li><li><a href="global.html#setItem">setItem</a></li><li><a href="global.html#setItemRegister">setItemRegister</a></li><li><a href="global.html#setMadeSmall">setMadeSmall</a></li><li><a href="global.html#setNameToHrefs">setNameToHrefs</a></li><li><a href="global.html#setPrioWhiteColor">setPrioWhiteColor</a></li><li><a href="global.html#setSubtasks">setSubtasks</a></li><li><a href="global.html#setTask">setTask</a></li><li><a href="global.html#showAssignmentCheckboxesEdit">showAssignmentCheckboxesEdit</a></li><li><a href="global.html#showCategory">showCategory</a></li><li><a href="global.html#showCategoryPrevent">showCategoryPrevent</a></li><li><a href="global.html#showCheckboxes">showCheckboxes</a></li><li><a href="global.html#showContactDetails">showContactDetails</a></li><li><a href="global.html#showPopUpWindowNewContact">showPopUpWindowNewContact</a></li><li><a href="global.html#sizeAction">sizeAction</a></li><li><a href="global.html#startDragging">startDragging</a></li><li><a href="global.html#stoppen">stoppen</a></li><li><a href="global.html#taskHTMLCode">taskHTMLCode</a></li><li><a href="global.html#tasksForSummary">tasksForSummary</a></li><li><a href="global.html#uncheckAll">uncheckAll</a></li><li><a href="global.html#unshowCheckboxesEdit">unshowCheckboxesEdit</a></li><li><a href="global.html#urgentTask">urgentTask</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Sat Sep 09 2023 17:45:10 GMT+0200 (Mitteleuropäische Sommerzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

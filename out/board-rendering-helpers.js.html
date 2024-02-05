@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: board-rendering-helpers.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: board-rendering-helpers.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>let contentContent = ""; // Saves the innerHTML of the  container with id="content"
+let contentBoard = "";  // Saves the innerHTML of the  container with id="borbaner"
+let contentformEdit = ""; // Saves the innerHTML of the  container with id="formEdit"
+let currentDraggedElement; //id of tasks, that is dragged
+let added = false;          //ist true, when some contacts are yet shown in the assingment checkboxes from the addTask (the first two contacts)
+let addedEdit = false;      //ist true, when some contacts are yet shown in the assingment checkboxes form the editDialog (the first two contacts)
+let editIndex = 0;          // index of the task, that is edited
+let fullscreen = true;      // is the screen bigger than 800px
+let nameUser;
+let details = false;        // are the details of a task blend in
+let isSmall;                // did we went from &lt;800px to &lt;=800px in the dialog
+let subsEdit = [];  // the recently selected subtasks
+let subsEditChecked = [];
+let headCreatButton = `&lt;img id="logo" src="../img/jLogo.svg">&lt;span id="lineHeadText">Kanban Project Management Tool&lt;/span>&lt;button class="taskButton" id="create1" type="submit" form="form">Create&lt;img src="../img/checkOne.svg"> &lt;/button>`;
+let expandSub = false;
+let addedEditsubs = false;
+
+//---------------------------------------------------------------render tasks---------------------------------------------------------------------------------
+
+/**
+ * render als task on the board
+ */
+function renderTasks() {
+    //clears up all areas
+    document.getElementById('taskArea0').innerHTML = getNotTask(0,'to do');
+    document.getElementById('taskArea1').innerHTML = getNotTask(1,'progress');
+    document.getElementById('taskArea2').innerHTML = getNotTask(2,'awaiting feedback');
+    document.getElementById('taskArea3').innerHTML = getNotTask(3,'done');
+    //only not filteres tasks are shown
+    for (let i = 0; i &lt; tasks.length; i++) {
+
+        if (!filterTask(i)) {
+            //renders the task
+            createTaskHTML(i);
+        }
+    }
+    renderNoTaskLabel();
+}
+
+/**
+ * Blends in a application with "no task in progress"
+ */
+function renderNoTaskLabel() {
+    let a = isAreaEmpty();
+
+    for (let ind = 0; ind &lt; 4; ind++) {
+        if (a[ind]) {
+            document.getElementById('noTask' + ind).classList.remove('d-none');
+        } else {
+            document.getElementById('noTask' + ind).classList.add('d-none');
+        }
+    }
+}
+
+/**Creates the HTML code for a tasks with the given index (boxes of a task in the board).
+ * 
+ * @param {number} index  indes of the 
+ */
+function createTaskHTML(index) {
+    let t;   
+    let color = tasks[index]['color'];
+    let maxSubs = tasks[index]['subtask'].length;
+    let madeSubs = getAmountMadeSubs(tasks[index]['checked']);
+    let barAre = '';
+    if (maxSubs > 0) {
+        let w = 200 * (madeSubs / maxSubs);
+        barAre = ` &lt;div class="barArea">
+        &lt;div class="bar">&lt;div class="barColor" style="width:${w}px">&lt;/div>&lt;/div>
+        &lt;div class="textBar">${madeSubs}/${maxSubs} Done&lt;/div>
+        &lt;/div>`;
+    }
+    t = taskHTMLCode(barAre, index, color);
+    document.getElementById('taskArea' + tasks[index]['state']).innerHTML += t;
+    renderMember(index);
+}
+
+/**
+ * 
+ * @param {String} barAre 
+ * @param {number} index 
+ * @param {String} color  
+ * @returns     String that contains the htmls code for the tasksdetails
+ */
+function taskHTMLCode(barAre, index, color) {
+    let drag = `draggable="true" ondragstart="startDragging(${index})"`;
+    let up = `&lt;img onclick="moveState(event,1,${index})" class="moveState"   src="../img/arrowUpState.svg">`;
+    let down = `&lt;img onclick="moveState(event,0,${index})" class="moveState"  src="../img/arrow.svg">`;
+    if (tasks[index]['state'] == '0') { up = ''; }
+    if (tasks[index]['state'] == '3') { down = ''; }
+    let t = `&lt;div class="task" onclick="openTask(${index})" ${drag} ondblclick="toNextState(${index})">
+    	    &lt;div style="display:flex;justify-content:space-between">&lt;div class="category" style="background-color: ${color};">${tasks[index]['category']}&lt;/div>
+            &lt;div class="moveStateArrows">${up}${down}&lt;/div>&lt;/div>
+            &lt;div>
+                &lt;div class="taskTitel">${tasks[index]['title']}&lt;/div>
+                &lt;div class="taskText">${tasks[index]['discription']}&lt;/div>
+            &lt;/div>
+            ${barAre}
+            &lt;div class="taskLastSection">
+            &lt;div class="memberArea" id=memberArea${index}>        
+            &lt;/div>
+            &lt;img src=${prioImage(tasks[index]['prio'])}>
+            &lt;/div>
+            &lt;/div>`;
+             return t;
+}
+
+//-----------------------------------------------resizeing of the screen-------------------------------------------------------------
+
+/**
+ * Handles resizing to small.
+ */
+function resizeListernerToSmall() {
+    if (dialog) {
+        document.getElementById('rightSection').classList.add('d-none');
+        document.getElementById('create1').classList.remove('d-none');
+        document.getElementById('bordbaner').classList.add('d-none');
+    }
+    if (details) {
+        document.getElementById('bordbaner').classList.add('d-none');
+    }
+    isSmall = true;
+}
+
+/**
+ * Handles resizing to fullscreen.
+ */
+function resizeListernerToFull() {
+    if (dialog) {
+        document.getElementById('rightSection').classList.remove('d-none');
+        document.getElementById('create1').classList.add('d-none');
+        document.getElementById('bordbaner').classList.remove('d-none');
+    }
+    if (details) {
+        document.getElementById('bordbaner').classList.remove('d-none');
+    }
+    isSmall = false;
+}
+
+/**
+ * Is executed, when the window of the screen is resized
+ */
+
+function resizeListener() {
+
+    if (window.innerWidth &lt;= 800 &amp;&amp; !isSmall) {
+        resizeListernerToSmall();
+    }
+
+    if (window.innerWidth > 800 &amp;&amp; isSmall) {
+        resizeListernerToFull();
+    }
+}
+
+//-----------------------------------------------------edit task--------------------------------------------------------------------
+/**
+ * Sets the new information, that where specified in the edit dialog to the task
+ * 
+ * @param {string} id       is of the form element that is responsible for the form validation and submits the editTask
+ */
+function editTask(id) {
+    let index = editIndex;
+    //in add-task.js checks if at least one checkbox with attribut checkEdit is clicked
+    checkboxValidation(id, '[checkEdit]');
+    // if formvalidation was succesful
+    if (checked) {
+       editTaskCorrectForm(index,id);
+    }
+    else {
+        if (!expanded) {
+            showCheckboxesEdit(0);
+            checkboxValidation(id, '[checkEdit]');
+        }
+    }
+}
+
+/**
+ * Creates the task with the current Values from the Input
+ * @param {number} index 
+ * @param {String} id     id of the Form object, that submits the editTask 
+ */
+function editTaskCorrectForm(index,id){
+    if (!expandSub) { openSubtasks(); }
+    addSubtaskToTasks();
+    //reads the required informations from all kind of inputs and set the information to the task
+    tasks[index]['title'] = document.getElementById('titleEdit').value;
+    tasks[index]['discription'] = document.getElementById('discriptionEdit').value;
+    tasks[index]['prio'] = '' + prio;
+    tasks[index]['assignment'] = getAssignmentsEdit(id);
+    tasks[index]['date'] = document.getElementById('dateEdit').value;
+
+    setTask('tasks', tasks);
+    addedEdit = false;
+    document.getElementById('taskEdit').classList.add('d-none');
+    document.getElementById('dialogTask').classList.add('d-none');
+    document.getElementById('bordbaner').classList.remove('d-none');
+    renderTasks();
+}
+
+//------------------------------------------------------------------Open add task------------------------------------------------------------
+
+/**
+ * Opens the AddTask dialog from the board.
+ * 
+ * @param {number} num  the state in which the task is located: e.g. 0 for "To do", 1 for In progress
+ */
+async function openAddTask(num) {
+    dialog = true;
+    state = num;
+    document.getElementById('assignedIcon').innerHTML = '';
+    document.getElementById('subtasksArea').innerHTML = '';
+    addDummyContacts();
+    numberSubtasks=1;
+    //fullscreen
+    if (window.innerWidth > 800) {
+        fullscreen = true;
+    }  
+    else {
+        openAddTaskSmallScreen();
+    }
+    document.getElementById("dialog").classList.remove("d-none");
+    setTimeout(movePos, 150, 1);
+    expandedCategory = true;
+    showCategory();
+}
+
+/**
+ * Adds the first two contacts of the Contactlist in the Assignment checkbox
+ */
+function addDummyContacts(){
+    if (!added) {
+        addContact(dummyContacts[0], '');
+        addContact(dummyContacts[1], '');
+        added = true;
+    }
+}
+
+/**
+ * Handles the opening of the addTask dialog for the smallscreen
+ */
+function openAddTaskSmallScreen() {
+    document.getElementById('create1').classList.remove('d-none');
+    document.getElementById('rightSection').classList.add('d-none');
+    document.getElementById('bordbaner').classList.add('d-none');
+    fullscreen = false;
+}
+
+//----------------------------------------------------------- open and close task ----------------------------------------------------------------------
+/**
+ * Opens the details of a task with the given id.
+ * 
+ * @param {number} index   the index of the task in the array
+ */
+function openTask(index) {
+    details = true;
+    editIndex = index;
+    document.getElementById("dialogTask").classList.remove("d-none");
+    document.getElementById("taskdialog").classList.remove("d-none");
+    createTaskDetails(index);
+    if (!isFull()) {
+        document.getElementById('bordbaner').classList.add('d-none');
+    }
+}
+
+/**
+ * close the dialog of the details of the opened task
+ */
+function closeTask() {
+    document.getElementById("dialogTask").classList.add("d-none");
+    document.getElementById('bordbaner').classList.remove('d-none');
+    addedEdit = false;
+    details = false;
+}
+
+//------------------------------------------------------------------Assignments --------------------------------------------------------------------------
+/**Blends in the checkboxes for the assignments in die edit Mode
+ * 
+ * @param {number} index    index of the task you wanr to edit
+ */
+function showAssignmentCheckboxesEdit(index) {
+    let assing = tasks[index]['assignment'];
+    let checkbox = document.getElementById("assignmentChoicesEdit");
+    checkboxes = form.querySelectorAll('[checkEdit]');
+    // checkboxes = form.querySelectorAll('input[type=checkbox]');
+    if (!expanded) {
+        checkbox.classList.remove('d-none');
+        document.getElementById('selectionContainerEdit').classList.add('paddingButtom');
+        expanded = true;
+    } else {
+        checkbox.classList.add('d-none');
+        document.getElementById('selectionContainerEdit').classList.remove('paddingButtom');
+        expanded = false;
+
+    }
+    //renders all the assigments of the tasks in the checkbox
+    if (!addedEdit) {
+        addContactEdit(assing); addedEdit = true;
+    }
+}
+
+/**
+ * 
+ * @returns invite new Member html code
+ */
+function getInviteNewAssignment() {
+    t = `&lt;div class="selectGapArrow" onclick="stoppen(event)" style="position: absolute;bottom:10px;">
+    &lt;div>Invite new member&lt;/div>
+    &lt;img src="../img/mailIcon.png" onclick="changeSelect('Edit')" style="height:30px;width: auto; cursor:pointer">
+    &lt;/div>`;
+    return t;
+}
+
+/**
+ * Renders the the given assignments as Checkboxes
+ * Called from  showAssignmentCheckboxesEdit(index)
+ * 
+ * @param {Array} elem        An JSON Array of all assignments 
+ * 
+ */
+
+function addContactEdit(elem) {
+    let t = "";
+    elem.forEach(element => {
+        t += ` &lt;div class="selectGapArrow" onclick="stoppen(event)">
+        &lt;label for="selContEdit${element['id']}">${element['name']}&lt;/label>
+        &lt;input checkEdit type="checkbox" id="selContEdit${element['id']}" name="${element['name']}" />
+        &lt;/div>`;
+    });
+    document.getElementById('assignmentChoicesEdit').innerHTML = '' + t + getInviteNewAssignment();
+    elem.forEach(element => {
+        document.getElementById(`selContEdit${element['id']}`).checked = true;
+    });
+}
+
+/**
+ * Is called when a tasks is edited. 
+ * It returns a list with all the contacts, that are chosen as an assigment (checkboxes are clicked) .
+ * When a task is edited all of this assigments are linked to the task. 
+ * 
+ * @param {string} id   id of the form element, that checks the form validation of the checkboxes
+ * @returns             list of all contacts that are clicked in the assignment checkboxes
+ */
+function getAssignmentsEdit(id) {
+    let form = document.getElementById(id);
+    // All checkboxes from the assignments in the editmode have the attribut 'checkEdit'
+    let assignments = form.querySelectorAll('[checkEdit]');
+    let newAssignments = [];
+    assignments.forEach(element => {
+        if (element.checked) {
+            getJSONContact(element.name);
+            newAssignments.push(dummy);
+        }
+    });
+    return newAssignments;
+}
+
+/**
+ * Checks, if a given contact is still in the contact List
+ * 
+ * @param {Object} cont   JSON Object of a contact
+ * @returns               returns weather a given contact is still in the List
+ */
+function isContactExisting(cont) {
+    let ret = false;
+    dummyContacts.forEach(e => {
+        if (e['name'] == cont['name']) {
+            ret = true;
+        }
+
+    })
+    return ret;
+}
+
+/**  
+ * @param {Array} assingments  An Array of JSON of the assignments of the recent task
+ * @returns                         a JSON Array of the assigned contacts of a task, that still are in the contact list
+ */
+function filterExistingAssignments(assingments) {
+    let ass = [];
+    assingments.forEach(a => {
+        if (isContactExisting(a)) {
+            ass.push(a);
+        }
+    })
+    return ass;
+}
+
+/**
+ * Displays all the members that are assigned to the task with the given index in the detailed view
+ * 
+ * @param {number} index  index of the task
+ * @param {string} id     id of the container, where the assigned members should be displayed
+ */
+function renderMemberDialog(index, id) {
+
+    let member = document.getElementById(id);
+    let memberList = tasks[index]['assignment'];
+    memberList = filterExistingAssignments(memberList);
+    let l = 0;
+    member.innerHTML = "";
+    if (memberList.length > 0) {
+        memberList.forEach(element => {
+            member.innerHTML += ` &lt;div style="display: flex; gap:25px;align-items: center;">
+        &lt;div class="memberDialog" style=" background-color: ${element['iconColor']};">${element['short']}&lt;/div>
+        &lt;div class="memberNameDialog">${element['name']}&lt;/div>
+    &lt;/div>&lt;/div>`
+            l++;
+
+        });
+    }
+    tasks[index]['assignment'] = memberList;
+}
+
+/**
+ * Renders the assigned members of the task in the board view (the short view)
+ * 
+ * @param {number } index index of the task
+ */
+function renderMember(index) {
+    let member = document.getElementById('memberArea' + index);
+    let memberList = tasks[index]['assignment'];
+    memberList = filterExistingAssignments(tasks[index]['assignment']);
+    let l = 0;
+    if (memberList.length > 0) {
+        memberList.forEach(element => {
+            member.innerHTML += ` &lt;div class="member" style=" background-color: ${element['iconColor']}; left:${30 * l}px ">${element['short']}&lt;/div>`
+            l++;
+        });
+    }
+    tasks[index]['assignment'] = memberList;
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#addAssignment">addAssignment</a></li><li><a href="global.html#addContact">addContact</a></li><li><a href="global.html#addContactEdit">addContactEdit</a></li><li><a href="global.html#addDummyContacts">addDummyContacts</a></li><li><a href="global.html#addNameToHref">addNameToHref</a></li><li><a href="global.html#addSubEdit">addSubEdit</a></li><li><a href="global.html#addSubtask">addSubtask</a></li><li><a href="global.html#addSubtaskEdit">addSubtaskEdit</a></li><li><a href="global.html#addSubtaskToTasks">addSubtaskToTasks</a></li><li><a href="global.html#addUser">addUser</a></li><li><a href="global.html#backToBoardFromedit">backToBoardFromedit</a></li><li><a href="global.html#buttonVisibility">buttonVisibility</a></li><li><a href="global.html#calculatePrio">calculatePrio</a></li><li><a href="global.html#calculatePrioAddTask">calculatePrioAddTask</a></li><li><a href="global.html#changeSelect">changeSelect</a></li><li><a href="global.html#checkEmailExists">checkEmailExists</a></li><li><a href="global.html#checkPassword">checkPassword</a></li><li><a href="global.html#checkValidity">checkValidity</a></li><li><a href="global.html#checkboxValidation">checkboxValidation</a></li><li><a href="global.html#checkedContacts">checkedContacts</a></li><li><a href="global.html#chooseColor">chooseColor</a></li><li><a href="global.html#clearInput">clearInput</a></li><li><a href="global.html#clearfirst">clearfirst</a></li><li><a href="global.html#clickLoop">clickLoop</a></li><li><a href="global.html#closeDialog">closeDialog</a></li><li><a href="global.html#closePopUpWindow">closePopUpWindow</a></li><li><a href="global.html#closeTask">closeTask</a></li><li><a href="global.html#createTask">createTask</a></li><li><a href="global.html#createTaskDetails">createTaskDetails</a></li><li><a href="global.html#createTaskHTML">createTaskHTML</a></li><li><a href="global.html#crossAddTask">crossAddTask</a></li><li><a href="global.html#deleteContact">deleteContact</a></li><li><a href="global.html#deleteTask">deleteTask</a></li><li><a href="global.html#displayRegistrationSuccess">displayRegistrationSuccess</a></li><li><a href="global.html#displayTaskDetailsEdit">displayTaskDetailsEdit</a></li><li><a href="global.html#editContact">editContact</a></li><li><a href="global.html#editTask">editTask</a></li><li><a href="global.html#editTaskCorrectForm">editTaskCorrectForm</a></li><li><a href="global.html#editdialog">editdialog</a></li><li><a href="global.html#filterExistingAssignments">filterExistingAssignments</a></li><li><a href="global.html#filterTask">filterTask</a></li><li><a href="global.html#getActiveTasks">getActiveTasks</a></li><li><a href="global.html#getAmountMadeSubs">getAmountMadeSubs</a></li><li><a href="global.html#getAssignmentsEdit">getAssignmentsEdit</a></li><li><a href="global.html#getColor">getColor</a></li><li><a href="global.html#getContact">getContact</a></li><li><a href="global.html#getHTMLSubtasksinDetails">getHTMLSubtasksinDetails</a></li><li><a href="global.html#getHTMLTaskDetails">getHTMLTaskDetails</a></li><li><a href="global.html#getInviteNewAssignment">getInviteNewAssignment</a></li><li><a href="global.html#getItem">getItem</a></li><li><a href="global.html#getItemRegister">getItemRegister</a></li><li><a href="global.html#getJSONContact">getJSONContact</a></li><li><a href="global.html#getMemberByName">getMemberByName</a></li><li><a href="global.html#getNewUserFromInputs">getNewUserFromInputs</a></li><li><a href="global.html#getNotTask">getNotTask</a></li><li><a href="global.html#getPasswordResetUser">getPasswordResetUser</a></li><li><a href="global.html#getTasks">getTasks</a></li><li><a href="global.html#getTimeandGreets">getTimeandGreets</a></li><li><a href="global.html#getTypeColorAddTask">getTypeColorAddTask</a></li><li><a href="global.html#giveTask">giveTask</a></li><li><a href="global.html#handleAddTaskHTML">handleAddTaskHTML</a></li><li><a href="global.html#handleCreateTaskCorrectForm">handleCreateTaskCorrectForm</a></li><li><a href="global.html#handleDialog">handleDialog</a></li><li><a href="global.html#includeHTML">includeHTML</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#initBoard">initBoard</a></li><li><a href="global.html#initIndex">initIndex</a></li><li><a href="global.html#initSummary">initSummary</a></li><li><a href="global.html#isAllreadyInSelection">isAllreadyInSelection</a></li><li><a href="global.html#isAreaEmpty">isAreaEmpty</a></li><li><a href="global.html#isChecked">isChecked</a></li><li><a href="global.html#isContactExisting">isContactExisting</a></li><li><a href="global.html#isFull">isFull</a></li><li><a href="global.html#loadBasics">loadBasics</a></li><li><a href="global.html#loadBasicsAddTask">loadBasicsAddTask</a></li><li><a href="global.html#loadContacts">loadContacts</a></li><li><a href="global.html#loadData">loadData</a></li><li><a href="global.html#loadRemote">loadRemote</a></li><li><a href="global.html#loadRemoteColor">loadRemoteColor</a></li><li><a href="global.html#loadUsers">loadUsers</a></li><li><a href="global.html#loadUsersAll">loadUsersAll</a></li><li><a href="global.html#loadUsersRegister">loadUsersRegister</a></li><li><a href="global.html#loginUser">loginUser</a></li><li><a href="global.html#movePopUp">movePopUp</a></li><li><a href="global.html#movePos">movePos</a></li><li><a href="global.html#moveState">moveState</a></li><li><a href="global.html#moveTo">moveTo</a></li><li><a href="global.html#newCategoryChoosen">newCategoryChoosen</a></li><li><a href="global.html#newContact">newContact</a></li><li><a href="global.html#newPassword">newPassword</a></li><li><a href="global.html#openAddTask">openAddTask</a></li><li><a href="global.html#openAddTaskSmallScreen">openAddTaskSmallScreen</a></li><li><a href="global.html#openBoard">openBoard</a></li><li><a href="global.html#openGuestLogin">openGuestLogin</a></li><li><a href="global.html#openSubtasks">openSubtasks</a></li><li><a href="global.html#openTask">openTask</a></li><li><a href="global.html#preventLoadNew">preventLoadNew</a></li><li><a href="global.html#prioImage">prioImage</a></li><li><a href="global.html#readQueryParameters">readQueryParameters</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#removeBottom">removeBottom</a></li><li><a href="global.html#removePopUP">removePopUP</a></li><li><a href="global.html#renderContacts">renderContacts</a></li><li><a href="global.html#renderInputCategory">renderInputCategory</a></li><li><a href="global.html#renderMember">renderMember</a></li><li><a href="global.html#renderMemberAddTask">renderMemberAddTask</a></li><li><a href="global.html#renderMemberDialog">renderMemberDialog</a></li><li><a href="global.html#renderNoTaskLabel">renderNoTaskLabel</a></li><li><a href="global.html#renderTasks">renderTasks</a></li><li><a href="global.html#resetForm">resetForm</a></li><li><a href="global.html#resizeListener">resizeListener</a></li><li><a href="global.html#resizeListenerAddTask">resizeListenerAddTask</a></li><li><a href="global.html#resizeListenerContacts">resizeListenerContacts</a></li><li><a href="global.html#resizeListernerToFull">resizeListernerToFull</a></li><li><a href="global.html#resizeListernerToSmall">resizeListernerToSmall</a></li><li><a href="global.html#responsiveContactDetailsBackButton">responsiveContactDetailsBackButton</a></li><li><a href="global.html#returnFromAddTask">returnFromAddTask</a></li><li><a href="global.html#saveContactChanges">saveContactChanges</a></li><li><a href="global.html#saveMe">saveMe</a></li><li><a href="global.html#selectPrio">selectPrio</a></li><li><a href="global.html#setBackgroundWhite">setBackgroundWhite</a></li><li><a href="global.html#setCategory">setCategory</a></li><li><a href="global.html#setColorEdit">setColorEdit</a></li><li><a href="global.html#setDataToStorage">setDataToStorage</a></li><li><a href="global.html#setItem">setItem</a></li><li><a href="global.html#setItemRegister">setItemRegister</a></li><li><a href="global.html#setMadeSmall">setMadeSmall</a></li><li><a href="global.html#setNameToHrefs">setNameToHrefs</a></li><li><a href="global.html#setPrioWhiteColor">setPrioWhiteColor</a></li><li><a href="global.html#setSubtasks">setSubtasks</a></li><li><a href="global.html#setTask">setTask</a></li><li><a href="global.html#showAssignmentCheckboxesEdit">showAssignmentCheckboxesEdit</a></li><li><a href="global.html#showCategory">showCategory</a></li><li><a href="global.html#showCategoryPrevent">showCategoryPrevent</a></li><li><a href="global.html#showCheckboxes">showCheckboxes</a></li><li><a href="global.html#showContactDetails">showContactDetails</a></li><li><a href="global.html#showPopUpWindowNewContact">showPopUpWindowNewContact</a></li><li><a href="global.html#sizeAction">sizeAction</a></li><li><a href="global.html#startDragging">startDragging</a></li><li><a href="global.html#stoppen">stoppen</a></li><li><a href="global.html#taskHTMLCode">taskHTMLCode</a></li><li><a href="global.html#tasksForSummary">tasksForSummary</a></li><li><a href="global.html#uncheckAll">uncheckAll</a></li><li><a href="global.html#unshowCheckboxesEdit">unshowCheckboxesEdit</a></li><li><a href="global.html#urgentTask">urgentTask</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Sat Sep 09 2023 17:45:10 GMT+0200 (Mitteleuropäische Sommerzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
