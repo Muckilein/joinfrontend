@@ -13,23 +13,7 @@ async function includeHTML() {
     }
 }
 
-async function fetchtest(){
-  
-    let data = {value:'Hallo'}
-    const csrfToken = "{{csrf_token}}" 
-    console.log('token is',csrfToken)
-    let resp = await fetch('http://127.0.0.1:8000/contacts/',{   
-        method:'POST',  
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': 'K0RWSn2GSkdJioh0LYRiQvn1SatEXi7ZNdp8k1DaasyxVa9at8WOZfAhvAO1cWbQ' // Include the CSRF token in the header
-        },        
-        body: JSON.stringify(data)
-    })
-    // let json = await resp.json();
-    // console.log( json);
-    console.log( resp);
-}
+
 
 /**
  * Loads basic Inforamtions like Users, contacts...

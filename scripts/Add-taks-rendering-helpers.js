@@ -62,7 +62,7 @@ async function loadUsersAll() {
 async function loadContacts() {
     contacts = [];
     contacts = JSON.parse(await getContact('contacts')).sort((a, b) => a.name.localeCompare(b.name));
-
+    contacts2 = getContactBE();
     let i = 0;
     contacts.forEach(element => { //colors[i % 9]
         let a = { "name": element['name'], "email": element['email'], "id": i + '', "iconColor": element['iconColor'], "short": element['short'] };
@@ -98,6 +98,33 @@ async function getContact(key) {
             }
             throw `Could not find data with key "${key}".`;
         });
+}
+
+async function getContactBE() {
+    const url = "http://127.0.0.1:8000/contacts/"
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization",'Token ' +"826a8ea96595f1ae6f14e374ebc715d27dc2600f");//+ localStorage.getItem('token'))
+    myHeaders.append('Access-Control-Allow-Headers', 'Content-Type')
+    myHeaders.append('Access-Control-Allow-Methods', 'GET')
+    myHeaders.append('Access-Control-Allow-Origin', '*');
+    let contact=""
+    const requestOptions = {
+      method: 'GET',
+      headers: myHeaders,      
+      redirect: 'follow'
+    };
+    try {
+      let resp = await fetch(url, requestOptions);
+      contact = await resp.json();
+      console.log("Contacts",contact)  ;      
+     
+    } catch (e) {
+      // Show error message
+      console.error(e);
+
+    }
+    return contact;
 }
 
 /**
