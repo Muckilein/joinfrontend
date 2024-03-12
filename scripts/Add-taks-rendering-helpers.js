@@ -1,5 +1,5 @@
 let dummyContacts = [];
-let colorsCategory = [];
+//let colorsCategory = [];
 let usersRegistered = [];
 let dummy;              // helpvariable for creating the assignment list of a task
 let isSmallAdd;     // true if the window is gone in the smallscreen
@@ -31,7 +31,7 @@ let initialColors = [
     { name: 'Backoffice', color: '#1FD7C1' },
     { name: 'Media', color: '#FFC701' },
     { name: 'Marketing', color: '#0038FF' }]
-
+let contacts2;
 //---------------------------------------------------Loading the contacts and registered person--------------------------------------------------
 /**
  * Loads the list of registered users from the data source.
@@ -41,45 +41,23 @@ let initialColors = [
  * @throws {Error} - If there is an error while loading the user data.
  */
 
-async function loadUsersAll() {
-    usersRegistered = [];
-    try {
-        let usersData = await getItem('users');
-        let userArray = JSON.parse(usersData['data']['value']);
-        userArray.forEach(user => {
-            let u = { "name": user['name'], "email": user['email'] };
-            usersRegistered.push(u);
-        });
-    } catch (error) {
-        console.error('Loading error:', error);
-        return [];
-    }
-}
+
+
 
 /**
  * Loads the contacs from the remote server in dummyContacts
  */
 async function loadContacts() {
-    contacts = [];
-    contacts = JSON.parse(await getContact('contacts')).sort((a, b) => a.name.localeCompare(b.name));
-    contacts2 = getContactBE();
+    //contacts = [];
+    //contacts = JSON.parse(await getContact('contacts')).sort((a, b) => a.name.localeCompare(b.name));
+    contacts2 = await getContactBE();
     let i = 0;
-    contacts.forEach(element => { //colors[i % 9]
-        let a = { "name": element['name'], "email": element['email'], "id": i + '', "iconColor": element['iconColor'], "short": element['short'] };
+    contacts2.forEach(element => { //colors[i % 9]
+        let a = { "name": element['name'], "email": element['email'], "id": element['id'] + '', "iconColor": element['iconColor'], "short": element['short'], "reg": true };
         i++;
         dummyContacts.push(a);
     });
-
-    await loadRemoteColor();
-    await loadUsersAll();
-    // loaded all registered User to the contact list
-    usersRegistered.forEach(u => {
-        let firstName = u['name'].trim().split(' ')[0]; // Erster Name
-        let lastName = u['name'].trim().split(' ')[1]; // Nachname
-        let short = (firstName ? firstName.charAt(0) : '') + (lastName ? lastName.charAt(0) : '');
-        let a = { "name": u['name'], "email": u['email'], "id": i + '', "iconColor": colorAll[i % 9], "short": short };
-        dummyContacts.push(a);
-    });
+    colorsCategory = await loadRemoteColor();
 }
 
 /**
@@ -100,31 +78,85 @@ async function getContact(key) {
         });
 }
 
-async function getContactBE() {
-    const url = "http://127.0.0.1:8000/contacts/"
+function getJ() {
+    let j = {
+        "id": 4,
+        "title": "IT Department Konsultieren",
+        "description": "Rufe in der IT an",
+        "date": "2024-03-04",
+        "color": "#ffffff",
+        "checked": true,
+        "prio": "2",
+        "state": "1",
+        "category": {
+            "id": 3,
+            "title": "Development"
+        },
+        "assignments": [{ "id": 4, "name": "AnniMaus" }],
+        "subtask": [
+            {
+                "id": 46,
+                "title": "Lesen",
+                "checked": false
+            },
+            {
+                "id": 47,
+                "title": "Rabarba",
+                "checked": true
+            }
+        ]
+    }
+    return j;
+}
+
+async function setValues(url, newCat) {
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization",'Token ' +"826a8ea96595f1ae6f14e374ebc715d27dc2600f");//+ localStorage.getItem('token'))
-    myHeaders.append('Access-Control-Allow-Headers', 'Content-Type')
-    myHeaders.append('Access-Control-Allow-Methods', 'GET')
-    myHeaders.append('Access-Control-Allow-Origin', '*');
-    let contact=""
+    myHeaders.append("Authorization", 'Token ' + "826a8ea96595f1ae6f14e374ebc715d27dc2600f");
     const requestOptions = {
-      method: 'GET',
-      headers: myHeaders,      
-      redirect: 'follow'
+        method: 'POST',
+        headers: myHeaders,
+        body: JSON.stringify(newCat),
+        redirect: 'follow'
     };
     try {
-      let resp = await fetch(url, requestOptions);
-      contact = await resp.json();
-      console.log("Contacts",contact)  ;      
-     
+        let resp = await fetch("http://127.0.0.1:8000/" + url, requestOptions);
+        let json = await resp.json();
+        console.log(resp);
+        console.log(json);
+
     } catch (e) {
-      // Show error message
-      console.error(e);
+        // Show error message
+        console.error(e);
 
     }
-    return contact;
+}
+
+async function save() {
+    console.log("call save");
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", 'Token ' + "826a8ea96595f1ae6f14e374ebc715d27dc2600f");
+    const raw = getJ();
+    const requestOptions = {
+        method: 'PUT',
+        headers: myHeaders,
+        body: JSON.stringify(raw),
+        redirect: 'follow'
+    };
+    try {
+        let resp = await fetch("http://127.0.0.1:8000/createTodoAPI/4/", requestOptions);
+        let json = await resp.json();
+        console.log(resp);
+        console.log(json);
+
+        // TODO: Redirect
+        //this.router.navigateByUrl('/todos');
+    } catch (e) {
+        // Show error message
+        console.error(e);
+
+    }
 }
 
 /**
@@ -287,7 +319,7 @@ async function getColor(key) {
  * Saves a JSON Array with the colors and names of each category and stores it in the variable colorsCategory
  *   
  */
-async function loadRemoteColor() {
+async function loadRemoteColorOld() {
     try {
         await getColor('category');
         colorsCategory = JSON.parse(colorsCategory.replaceAll('\'', '"'));
@@ -296,6 +328,27 @@ async function loadRemoteColor() {
         console.info('Could not found tasks');
     }
 }
+
+// async function loadRemoteColor() {
+//     const url = "http://127.0.0.1:8000/categoryAPI/"
+//     const myHeaders = new Headers();
+//     myHeaders.append("Content-Type", "application/json");
+//     myHeaders.append("Authorization", 'Token ' + "826a8ea96595f1ae6f14e374ebc715d27dc2600f");//+ localStorage.getItem('token'))        
+//     let cat = [];
+//     const requestOptions = {
+//         method: 'GET',
+//         headers: myHeaders,
+//         redirect: 'follow',
+//     };
+//     try {
+//         let resp = await fetch(url, requestOptions);
+//         cat = await resp.json();
+//         colorsCategory = cat;
+//     } catch (e) {
+//         console.error(e);
+//     }
+//     return cat;
+// }
 
 /**
  * Renders a new Category on the Category selection
@@ -320,14 +373,20 @@ function renderInputCategory(event) {
  */
 function newCategoryChoosen() {
     chosenCategory = document.getElementById('newCategory').value;
+
     if (chosenCategory != "") {
         newCategory += `<div class="selectionChoice" onclick="setCategory('${chosenCategory}',event)" value="${chosenCategory}">${chosenCategory}<div class="circle"  style="background-color:${categoryColor} "></div></div>`;
-        let elem = { "name": '' + chosenCategory, "color": '' + categoryColor };
-        colorsCategory.push(elem);
+        // let elem = { "name": '' + chosenCategory, "color": '' + categoryColor };
+        // colorsCategory.push(elem);
         expandedCategory = false;
+        //setTask('category', colorsCategory);// delete later
+        let cat = setValues('categoryAPI/', { "title": chosenCategory, "color": categoryColor });
+        colorsCategory.push(cat);
+        console.log("created Category", cat);
         showCategory(categoryColor);
-        setTask('category', colorsCategory);
+        document.getElementById('selectionCategory').innerHTML += newCategory;
         document.getElementById('colorChoice').classList.add('d-none');
+
     }
 }
 
@@ -392,12 +451,16 @@ function calculatePrioAddTask(priority) {
  */
 function showCategory() {
     let cat = `${categoryTitle} ${newCategoryField}`;
-
+    console.log("call showCategory");
+    console.log(colorsCategory);
     // checkboxes = form.querySelectorAll('input[type=checkbox]');
     if (!expandedCategory) {
+        console.log(colorsCategory);
         colorsCategory.forEach(c => {
-            cat += `
-            <div class="selectionChoice" onclick="setCategory('${c['name']}',event)" value="${c['name']}">${c['name']} <div class="circle"  style="background-color:${c['color']} "></div></div>`;
+            if (c['title'] != undefined) {
+                cat += `
+            <div class="selectionChoice" onclick="setCategory('${c['title']}',event)" value="${c['title']}">${c['title']} <div class="circle"  style="background-color:${c['color']} "></div></div>`;
+            }
         })
 
         document.getElementById('selectionCategory').innerHTML = cat;
@@ -463,7 +526,7 @@ function addSubtask() {
     let sub = document.getElementById('subtask').value;
     let checkedList = [];
     for (let i = 1; i < numberSubtasks; i++) {
-        if (document.getElementById(`subtask${i}`).checked){
+        if (document.getElementById(`subtask${i}`).checked) {
             checkedList.push(i);
         }
     }
@@ -475,7 +538,7 @@ function addSubtask() {
         document.getElementById('subtasksArea').innerHTML += t;
     }
     document.getElementById('subtask').value = "";
-    for (let i = 0; i <checkedList.length; i++) { document.getElementById(`subtask${checkedList[i]}`).checked = true; }
+    for (let i = 0; i < checkedList.length; i++) { document.getElementById(`subtask${checkedList[i]}`).checked = true; }
     document.getElementById(`subtask${numberSubtasks}`).checked = true;
     numberSubtasks++;
 }

@@ -3,9 +3,11 @@
 const STORAGE_TOKEN = '7WLO2N6502EXUOLVYTZHZH3VTBY404CF2A5ZADMU';   
 const STORAGE_URL = 'https://remote-storage.developerakademie.org/item'; 
 let tasks = []; 
+let tasksNew = []; 
 let p;  
 let contacts ;
 let generatedLetters = [];
+let colorsCategory=[]
 
 /**
  * load all external html files with the attribut w3-include-html
@@ -108,6 +110,102 @@ async function getTasks(key) {
     p = await fetch(url).then(resp => resp.json()).then(resp => resp.data.value);
     return p;
 }
+
+
+async function getContactBE() {
+    const url = "http://127.0.0.1:8000/contacts/";     
+    let co =  await loadRemoteNew(url)
+    return co;
+}
+
+async function loadRemoteColor() {
+    const url = "http://127.0.0.1:8000/categoryAPI/"   
+    cat =  await loadRemoteNew(url)
+    return cat;
+}
+
+async function loadRemoteTodos() {
+    const url = "http://127.0.0.1:8000/createTodoAPI/"   
+    tasks =  await loadRemoteNew(url);    
+}
+
+async function setRemoteTodos() {
+    const url = "http://127.0.0.1:8000/createTodoAPI/2/"   
+    saveRemoteNew(url,tasks[0]);   
+}
+
+async function loadRemoteNew(url){    
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", 'Token ' + "826a8ea96595f1ae6f14e374ebc715d27dc2600f");//+ localStorage.getItem('token'))        
+    let data = [];
+    const requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow',
+    };
+    try {
+        let resp = await fetch(url, requestOptions);
+        data = await resp.json();       
+    } catch (e) {
+        console.error(e);
+    }
+    return data;
+}
+
+async function saveRemoteNew(url,dataUpload){    
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", 'Token ' + "826a8ea96595f1ae6f14e374ebc715d27dc2600f");//+ localStorage.getItem('token'))        
+    let data = [];
+    const requestOptions = {
+        method: 'PUT',
+        headers: myHeaders,
+        body: JSON.stringify(dataUpload),
+        redirect: 'follow',
+    };
+    try {
+        let resp = await fetch(url, requestOptions);
+        console.log(resp);
+       // data = await resp.json();       
+    } catch (e) {
+        console.error(e);
+    }
+    return data;
+}
+
+function testRemote(){
+   let t = {
+        "id": 4,
+        "title": "IT Konsultieren",
+        "description": "Rufe in der IT an",
+        "date": "2024-03-04",
+        "color": "#ffffff",
+        "checked": true,
+        "prio": "2",
+        "state": "1",
+        "category": {
+            "id": 3,
+            "title": "Development"
+        },
+        "assignments": [{"id":4,"name":"AnniMaus"}],
+        "subtask": [
+            {
+                "id": 46,
+                "title": "Lesen",
+                "checked": false
+            },
+            {
+                "id": 47,
+                "title": "Rabarba",
+                "checked": true
+            }
+        ]
+    }
+    return t;
+}
+
+
 
 /**
  * This function loads the tasks from the remote storage and saves it in tasks.

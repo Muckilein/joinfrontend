@@ -32,7 +32,7 @@ async function loadBasicsAddTask(){
     loadContacts();
     await includeHTML();
     await loadRemote();
-    await loadRemoteColor();
+    colorsCategory = await loadRemoteColor();
     addContact(dummyContacts[0], '');
     addContact(dummyContacts[1], '');
 }
@@ -278,7 +278,7 @@ function giveTask(st, checked) {
         "title": `${document.getElementById("title").value}`,
         "discription": `${document.getElementById("discription").value}`,
         "category": chosenCategory,
-        "assignment": addedContacts,
+        "assignments": addedContacts,
         "date": `${document.getElementById("date").value}`,
         "prio": '' + prio,
         "subtask": st,

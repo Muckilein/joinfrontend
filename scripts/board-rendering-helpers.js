@@ -52,6 +52,7 @@ function renderNoTaskLabel() {
     }
 }
 
+
 /**Creates the HTML code for a tasks with the given index (boxes of a task in the board).
  * 
  * @param {number} index  indes of the 
@@ -59,8 +60,8 @@ function renderNoTaskLabel() {
 function createTaskHTML(index) {
     let t;   
     let color = tasks[index]['color'];
-    let maxSubs = tasks[index]['subtask'].length;
-    let madeSubs = getAmountMadeSubs(tasks[index]['checked']);
+    let maxSubs = tasks[index]['subtask'].length;  
+    let madeSubs = getAmountMadeSubs(index);
     let barAre = '';
     if (maxSubs > 0) {
         let w = 200 * (madeSubs / maxSubs);
@@ -88,11 +89,11 @@ function taskHTMLCode(barAre, index, color) {
     if (tasks[index]['state'] == '0') { up = ''; }
     if (tasks[index]['state'] == '3') { down = ''; }
     let t = `<div class="task" onclick="openTask(${index})" ${drag} ondblclick="toNextState(${index})">
-    	    <div style="display:flex;justify-content:space-between"><div class="category" style="background-color: ${color};">${tasks[index]['category']}</div>
+    	    <div style="display:flex;justify-content:space-between"><div class="category" style="background-color: ${tasks[index]['color']};">${tasks[index]['category']['title']}</div>
             <div class="moveStateArrows">${up}${down}</div></div>
             <div>
                 <div class="taskTitel">${tasks[index]['title']}</div>
-                <div class="taskText">${tasks[index]['discription']}</div>
+                <div class="taskText">${tasks[index]['description']}</div>
             </div>
             ${barAre}
             <div class="taskLastSection">
@@ -185,7 +186,7 @@ function editTaskCorrectForm(index,id){
     tasks[index]['title'] = document.getElementById('titleEdit').value;
     tasks[index]['discription'] = document.getElementById('discriptionEdit').value;
     tasks[index]['prio'] = '' + prio;
-    tasks[index]['assignment'] = getAssignmentsEdit(id);
+    tasks[index]['assignments'] = getAssignmentsEdit(id);
     tasks[index]['date'] = document.getElementById('dateEdit').value;
 
     setTask('tasks', tasks);
@@ -277,7 +278,7 @@ function closeTask() {
  * @param {number} index    index of the task you wanr to edit
  */
 function showAssignmentCheckboxesEdit(index) {
-    let assing = tasks[index]['assignment'];
+    let assing = tasks[index]['assignments'];
     let checkbox = document.getElementById("assignmentChoicesEdit");
     checkboxes = form.querySelectorAll('[checkEdit]');
     // checkboxes = form.querySelectorAll('input[type=checkbox]');
@@ -393,7 +394,7 @@ function filterExistingAssignments(assingments) {
 function renderMemberDialog(index, id) {
 
     let member = document.getElementById(id);
-    let memberList = tasks[index]['assignment'];
+    let memberList = tasks[index]['assignments'];
     memberList = filterExistingAssignments(memberList);
     let l = 0;
     member.innerHTML = "";
@@ -407,8 +408,10 @@ function renderMemberDialog(index, id) {
 
         });
     }
-    tasks[index]['assignment'] = memberList;
+    tasks[index]['assignments'] = memberList;
 }
+
+
 
 /**
  * Renders the assigned members of the task in the board view (the short view)
@@ -417,8 +420,8 @@ function renderMemberDialog(index, id) {
  */
 function renderMember(index) {
     let member = document.getElementById('memberArea' + index);
-    let memberList = tasks[index]['assignment'];
-    memberList = filterExistingAssignments(tasks[index]['assignment']);
+    let memberList = tasks[index]['assignments'];
+    memberList = filterExistingAssignments(tasks[index]['assignments']);
     let l = 0;
     if (memberList.length > 0) {
         memberList.forEach(element => {
@@ -426,5 +429,5 @@ function renderMember(index) {
             l++;
         });
     }
-    tasks[index]['assignment'] = memberList;
+    tasks[index]['assignments'] = memberList;
 }

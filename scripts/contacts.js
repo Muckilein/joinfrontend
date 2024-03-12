@@ -5,7 +5,7 @@ let colorsIcon = ['#FF7A00', '#9327FF', '#29ABE2', '#FC71FF', '#02CF2F', '#AF161
 let nameUser = "";
 setMadeSmall();
 window.addEventListener("resize", resizeListenerContacts);
-
+contacts =[];
 /**
  * sets the initial values for madeSmall
  */
@@ -38,7 +38,7 @@ function resizeListenerContacts() {
  * Give contacts a value and load every created contact from the Server
  */
 
-async function loadContacts() {
+async function loadContactsOld() {
   try {
     const response = await getItem('contacts');
     if (response && response.data && response.data.value) {
@@ -52,6 +52,21 @@ async function loadContacts() {
   }
 }
 
+
+async function loadContacts() {
+  //contacts = [];
+  //contacts = JSON.parse(await getContact('contacts')).sort((a, b) => a.name.localeCompare(b.name));
+  let c=[]
+  c  =  await getContactBE();
+  let i = 0;
+  c.forEach(element => { //colors[i % 9]
+      let a = { "name": element['name'], "email": element['email'], "id": element['id'] + '', "iconColor": element['iconColor'], "short": element['short'], "reg": true };
+      i++;
+      contacts.push(a);
+      contacts.sort((a, b) => a.name.localeCompare(b.name));
+  });
+  //await loadRemoteColor();
+}
 /**
  * This function is an onload function. It will render every contact, from the server. And will only stop when 
  * the length from contacts(array) is reached. It will also create the seperator and letters and sort it 

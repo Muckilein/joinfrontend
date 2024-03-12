@@ -14,7 +14,6 @@ async function includeHTML() {
 }
 
 
-
 /**
  * Loads basic Inforamtions like Users, contacts...
  */
@@ -22,9 +21,46 @@ async function loadBasics(){
     loadContacts();
     await includeHTML();
     await loadRemote();
-    await loadRemoteColor();
-    await loadUsersAll();
+    await loadRemoteTodos();
+    console.log(tasks);
+    setTimeout(() => {
+        changeAssignments();
+    }, 500);
+    
+    colorsCategory= await loadRemoteColor();
+    //await loadUsersAll();
 }
+ 
+function changeAssignments(){
+   console.log('call changeAssignments');
+    tasks.forEach((t)=>{
+        makeAssignmentList(t)
+    });
+}
+
+function makeAssignmentList(t){
+    let taskAss = t['assignments'];    
+    let ass =[]
+    taskAss.forEach((ta)=>{
+       let id = ta['id'];      
+       let aU = getUserByID(id);      
+       if(aU!=null)
+       ass.push(getUserByID(id))
+    });
+    t['assignments']= ass;
+   }
+   
+   function getUserByID(id){
+    let u = null;
+      dummyContacts.forEach((c)=>{     
+        if(c['id']==id)
+        {
+            u = c;
+            return c;            
+        }
+      });
+      return u;
+   }
 
 /** 
 Initialized the board.
@@ -35,6 +71,9 @@ async function initBoard() {
     addTask = false;    
     await loadBasics();
     renderTasks();
+    setTimeout(() => {
+        renderTasks();
+    }, 1500);
     addNameToHref();
     window.addEventListener("resize", resizeListener);
     if (isFull) {
@@ -183,19 +222,20 @@ function getNotTask(stateArea,cat) {
     return `<div id="noTask${stateArea}" class="noTask d-none";>No task in ${cat}</div>`;
 }
 
+
 /**
  * 
  * @param {Array} array Contains an array with bool that shows weather a subtasktasks was made or not (true means have to to them, false done)
  * @returns             Amount of subs, that are made
  */
-function getAmountMadeSubs(array) {
-    let ar = 0;
-    array.forEach(a => {
-        if (a) {
-            ar++;
-        }
+function getAmountMadeSubs(index){
+    let t = tasks[index];
+    let subs = t['subtask'];
+    let i = 0;
+    subs.forEach(s=>{
+        if(s['checked']) i++;
     });
-    return ar;
+    return i;
 }
 
 /**
@@ -258,10 +298,11 @@ function addSubEdit(sub) {
     let subs = sub;
     t = "";
     subs.forEach(element => {
+        console.log(element);
 
         t += ` <div class="selectGapArrow" onclick="stoppen(event)">
-        <label for="subsEdit${i}">${element}</label>
-        <input subEdit type="checkbox" id="selSubEdit${i}" name="${element}"  />
+        <label for="subsEdit${i}">${element['title']}</label>
+        <input subEdit type="checkbox" id="selSubEdit${i}" name="${element['title']}" checked = ${element['checked']}  />
         </div>`;
         i++;
     });
@@ -289,6 +330,7 @@ function openSubtasks() {
         expandSub = true;
         // addSubEdit(tasks[editIndex]['subtask']);
         addSubEdit(subsEdit);
+       
     } else {
         checkbox.classList.add('d-none');
         document.getElementById('subtaskContainerEdit').classList.remove('paddingButtomEdit');
@@ -348,11 +390,10 @@ function calculatePrio(priority) {
  */
 function getActiveTasks(index) {
     let list = [];
-    let subs = tasks[index]['subtask'];
-    let bool = tasks[index]['checked'];
+    let subs = tasks[index]['subtask'];   
     for (let i = 0; i < subs.length; i++) {
-        if (!bool[i]) {
-            list.push(subs[i]);
+        if (!subs[i]['checked']) {
+            list.push(subs[i]['title']);
         }
     }
     return list;
