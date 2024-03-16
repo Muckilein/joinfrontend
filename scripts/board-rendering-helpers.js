@@ -10,7 +10,6 @@ let nameUser;
 let details = false;        // are the details of a task blend in
 let isSmall;                // did we went from <800px to <=800px in the dialog
 let subsEdit = [];  // the recently selected subtasks
-let subsEditChecked = [];
 let headCreatButton = `<img id="logo" src="../img/jLogo.svg"><span id="lineHeadText">Kanban Project Management Tool</span><button class="taskButton" id="create1" type="submit" form="form">Create<img src="../img/checkOne.svg"> </button>`;
 let expandSub = false;
 let addedEditsubs = false;
@@ -160,6 +159,8 @@ function resizeListener() {
  */
 function editTask(id) {
     let index = editIndex;
+    console.log("task",index);
+    console.log(tasks[index]);
     //in add-task.js checks if at least one checkbox with attribut checkEdit is clicked
     checkboxValidation(id, '[checkEdit]');
     // if formvalidation was succesful
@@ -179,7 +180,7 @@ function editTask(id) {
  * @param {number} index 
  * @param {String} id     id of the Form object, that submits the editTask 
  */
-function editTaskCorrectForm(index,id){
+function editTaskCorrectFormOLD(index,id){
     if (!expandSub) { openSubtasks(); }
     addSubtaskToTasks();
     //reads the required informations from all kind of inputs and set the information to the task
@@ -196,6 +197,27 @@ function editTaskCorrectForm(index,id){
     document.getElementById('bordbaner').classList.remove('d-none');
     renderTasks();
 }
+function editTaskCorrectForm(index,id){
+    console.log("Call Edit Correct Form");
+    if (!expandSub) { openSubtasks(); }
+    addSubtaskToTasks();
+    //reads the required informations from all kind of inputs and set the information to the task
+    tasks[index]['title'] = document.getElementById('titleEdit').value;
+    tasks[index]['description'] = document.getElementById('descriptionEdit').value;
+    tasks[index]['prio'] = '' + prio;
+    tasks[index]['assignments'] = getAssignmentsEdit(id);
+    tasks[index]['date'] = document.getElementById('dateEdit').value;
+    console.log(tasks[index]['subtask']);
+    console.log(tasks[index]['assignments']);
+    //setTask('tasks', tasks);
+    setRemoteTodos(tasks[index]);
+    addedEdit = false;
+    document.getElementById('taskEdit').classList.add('d-none');
+    document.getElementById('dialogTask').classList.add('d-none');
+    document.getElementById('bordbaner').classList.remove('d-none');
+    renderTasks();
+}
+
 
 //------------------------------------------------------------------Open add task------------------------------------------------------------
 
@@ -230,7 +252,7 @@ async function openAddTask(num) {
 function addDummyContacts(){
     if (!added) {
         addContact(dummyContacts[0], '');
-        addContact(dummyContacts[1], '');
+        //addContact(dummyContacts[1], '');
         added = true;
     }
 }
@@ -351,6 +373,8 @@ function getAssignmentsEdit(id) {
             newAssignments.push(dummy);
         }
     });
+    console.log("newAssignments");
+    console.log(newAssignments);
     return newAssignments;
 }
 

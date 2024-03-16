@@ -1,17 +1,5 @@
-/**
- * return the color of the icon of the task type
- * 
- * @param {string} type     type of the task like: Design, Marketing....
- * */
-function getTypeColorAddTask(type) {
 
-    let c = "";
-    colorsCategory.forEach(col => {
-        if (col['name'] == type)
-            c = col['color'];
-    });
-    return c;
-}
+
 
 /**
  * Reads the name of the logged in Person from the query parameter and saves it
@@ -19,22 +7,27 @@ function getTypeColorAddTask(type) {
 function readQueryParameters() {
     const urlParams = new URLSearchParams(window.location.search);
     const msg = urlParams.get('name');
-
+    const id = urlParams.get('id');
     if (msg) {
         userNameAddTask = msg;
     }
+    setTimeout(() => {
+        setNameToHrefs(userNameAddTask, id);
+    }, 1000);
+
 }
 
 /**
  * Loads basic data lile User, Contacts, Categories
  */
-async function loadBasicsAddTask(){
+async function loadBasicsAddTask() {
     loadContacts();
     await includeHTML();
-    await loadRemote();
+    //await loadRemote();
     colorsCategory = await loadRemoteColor();
     addContact(dummyContacts[0], '');
-    addContact(dummyContacts[1], '');
+    console.log(dummyContacts)
+    //addContact(dummyContacts[1], '');
 }
 
 /** 
@@ -47,14 +40,20 @@ async function init() {
     addTask = true;
     loadBasicsAddTask();
     readQueryParameters();
-    setNameToHrefs(userNameAddTask);
+
+
     // Handles the rezising
     window.addEventListener("resize", resizeListenerAddTask);
     //Handles wheather the size of the screen is fullsize or not
     sizeAction();
-    categoryTitle = document.getElementById('selectionCategory').innerHTML;
-    // Sets the minDate
-    document.getElementById('date').min = new Date().toLocaleDateString('fr-ca');
+    setTimeout(() => {
+        categoryTitle = document.getElementById('selectionCategory').innerHTML;
+        // Sets the minDate
+        document.getElementById('date').min = new Date().toLocaleDateString('fr-ca');
+       
+    }, 500);
+   
+
 }
 
 /**
@@ -86,7 +85,7 @@ function changeSelect(add) {
 function clearInput() {
     // clears all the inuts
     document.getElementById("title").value = "";
-    document.getElementById("discription").value = "";
+    document.getElementById("description").value = "";
     document.getElementById("date").value = "";
     document.getElementById("subtask").value = "";
     for (let i = 0; i < 3; i++) {
@@ -246,7 +245,7 @@ async function createTask() {
  * Handles the createTask, when the Form validation was successfull.
  * Actually creates the new task
  */
-function handleCreateTaskCorrectForm() {
+async function handleCreateTaskCorrectForm() {
 
     let checked = [];
     let st = setSubtasks();
@@ -259,8 +258,9 @@ function handleCreateTaskCorrectForm() {
 
     document.getElementById('prio' + prioOld).style.backgroundColor = 'white';
     tasks.push(task);
+    makeNewTodos(task);
     //saves tasks remote
-    setTask('tasks', tasks);
+    //setTask('tasks', tasks);
     // handles what happend after the task was created      
     returnFromAddTask(true);
     if (addTask) { setTimeout(backBoard, 1500); }
@@ -274,20 +274,22 @@ function handleCreateTaskCorrectForm() {
  * @returns return a new task
  */
 function giveTask(st, checked) {
+    console.log(chosenCategory);
     let task = {
         "title": `${document.getElementById("title").value}`,
-        "discription": `${document.getElementById("discription").value}`,
-        "category": chosenCategory,
+        "description": `${document.getElementById("description").value}`,
+        "category": {"title":chosenCategory['title'],"color":chosenCategory['color']},
         "assignments": addedContacts,
         "date": `${document.getElementById("date").value}`,
         "prio": '' + prio,
         "subtask": st,
         "state": '' + state,
-        "color": '' + categoryColor,
+        "color": '' + chosenCategory['color'],
         "maxSubs": '' + st.length,
         "checked": checked,
     }
-
+    console.log('categoryColor',categoryColor);
+    console.log('new made task',task);
     return task;
 }
 

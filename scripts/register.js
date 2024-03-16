@@ -41,16 +41,12 @@ async function loadUsersRegister() {
  */
 async function register() {
     const newUser = getNewUserFromInputs();
-    const emailExists = await checkEmailExists(newUser.email);
-    if (emailExists) {
-        displayEmailExistsMessage();
-        return;
-    }
-    addUser(newUser);
+    registerUser(newUser);
     resetForm();
     displayRegistrationSuccess();
-    // setTimeout(backtoLogin, 1000);
+  
 }
+
 
 function backtoLogin() {
     window.location.href = "../index.html";
@@ -62,11 +58,19 @@ function getNewUserFromInputs() {
     const nameInput = document.getElementById('userName');
     const emailInput = document.getElementById('emailLogin');
     const passwordInput = document.getElementById('password');
-
+    let split = nameInput.value.split(' ');
+    split.push(" ");
+    let nameKorrekt = "";
+    split.forEach((s)=>{
+        nameKorrekt+= s;
+    });
     return {
-        name: nameInput.value,
-        email: emailInput.value,
-        password: passwordInput.value,
+        "username": nameKorrekt,
+        "email": emailInput.value,
+        "password": passwordInput.value,
+        "password2": passwordInput.value,
+        "first_name":split[0],
+        "last_name":split[1]
     };
 }
 
@@ -160,28 +164,45 @@ function openGuestLogin() {
  * @param {Event} event - The event object from the login form submission.
  */
 async function loginUser(event) {
+    console.log("call Login");
     event.preventDefault();
     const emailInput = document.getElementById('emailLogin');
-    const passwordInput = document.getElementById('passwordLogin');
-    const loginError = document.getElementById('login-error');
-    let check = document.getElementById('checkbox');
-    let dat = loadData();
-    let mail = dat[0];
-    email = emailInput.value;
-    let password = passwordInput.value;
-    await loadUsersRegister();
-    users.forEach(u => {
-        if (mail === ""|| !check.checked) {
-            if (u.email === email && u.password === password) {
-                user = u;
-            }
-        } else {
-            if (u.email === mail) {
-                user = u;
-            }
-        }
+    const passwordInput = document.getElementById('passwordLogin'); 
+    let email = emailInput.value;
+    let password = passwordInput.value;        
+
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    const raw = JSON.stringify({
+      "username": email,
+      "password": password
     });
-    setDataToStorage(user,check,loginError);       
+
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: raw,
+      redirect: 'follow'
+    };
+    try {
+      let resp = await fetch("http://127.0.0.1:8000/login/", requestOptions);
+      let json = await resp.json();
+      console.log(json);
+      setToken( json.token);
+      id =json['user_id'];
+      localStorage.setItem('id',id);       
+      let user = await getUserbyId(id);      
+      console.log("id is",id);
+      console.log(user);
+      // TODO: Redirect
+      window.location.href = `./html/summary.html?name=${user.username}&id=${id}`;     
+    } catch(e){
+      // Show error message
+      console.error(e);
+
+    }
+   // setDataToStorage(user,check,loginError);       
 }
 
 /**
@@ -408,6 +429,8 @@ function getEmailUrl() {
     const email = urlParams.get('email');
     return email;
 }
+
+
 
 
 

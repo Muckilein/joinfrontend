@@ -6,6 +6,7 @@ let nameUser = "";
 setMadeSmall();
 window.addEventListener("resize", resizeListenerContacts);
 contacts =[];
+users =[];
 /**
  * sets the initial values for madeSmall
  */
@@ -58,9 +59,10 @@ async function loadContacts() {
   //contacts = JSON.parse(await getContact('contacts')).sort((a, b) => a.name.localeCompare(b.name));
   let c=[]
   c  =  await getContactBE();
+  users = await getUsers();
   let i = 0;
   c.forEach(element => { //colors[i % 9]
-      let a = { "name": element['name'], "email": element['email'], "id": element['id'] + '', "iconColor": element['iconColor'], "short": element['short'], "reg": true };
+      let a = { "name": element['name'], "email": element['email'], "id": element['id'] + '', "iconColor": element['iconColor'], "short": element['short'], "reg": element['reg'] };
       i++;
       contacts.push(a);
       contacts.sort((a, b) => a.name.localeCompare(b.name));
@@ -98,12 +100,12 @@ async function renderContacts() {
 async function addNameToHref() {
   const urlParams = new URLSearchParams(window.location.search);
   const msg = urlParams.get('name');
-
+  const id = urlParams.get('id');
   if (msg) {
     nameUser = msg;
 
   }
-  setNameToHrefs(nameUser);
+  setNameToHrefs(nameUser,id);
 }
 
 /**
@@ -136,6 +138,8 @@ async function saveContactChanges(i) {
  * This will delete the selected contact from the array contacts.
  */
 async function deleteContact(i) {
+  if (!contacts[i]['reg'])
+ { 
   contacts.splice(i, 1);
   await setItem('contacts', JSON.stringify(contacts));
   let newContact = document.getElementById('newContact');
@@ -149,7 +153,10 @@ async function deleteContact(i) {
   document.getElementById('responsiveHeadlinePhrase').classList.add('d-none');
   document.getElementById('responsiveDelete').classList.add('d-none');
   document.getElementById('responsiveEdit').classList.add('d-none');
-  document.getElementById('backArrowResponsive').classList.add('d-none');  
+  document.getElementById('backArrowResponsive').classList.add('d-none'); 
+ }else{
+  console.log("Not allowed to delete this.")
+ } 
 }
 
 /**

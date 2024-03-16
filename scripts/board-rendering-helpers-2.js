@@ -18,11 +18,13 @@ function preventLoadNew(id) {
 async function addNameToHref() {
     const urlParams = new URLSearchParams(window.location.search);
     const msg = urlParams.get('name');
+    const id = urlParams.get('id');
 
     if (msg) {
         nameUser = msg;
+
     }
-    setNameToHrefs(nameUser);
+    setNameToHrefs(nameUser,id);
 }
 
 /**
@@ -120,9 +122,9 @@ function getHTMLTaskDetails(index, pr, subT) {
             <img src="../img/delete button v1.svg" alt="garbage" style="cursor:pointer" onclick="deleteTask(${index},true)">
             <img src="../img/edit button v1.svg" alt="pencil" style="cursor:pointer" onclick="editdialog(${index})">
         </div>
-        <div class="categoryDialog" style="background-color: ${tasks[index]['color']};">${tasks[index]['category']}</div>
+        <div class="categoryDialog" style="background-color: ${tasks[index]['color']};">${tasks[index]['category']['title']}</div>
         <div class="taskTitelDialog">${tasks[index]['title']}</div>
-        <div class="taskTextDialog">${tasks[index]['discription']}</div>
+        <div class="taskTextDialog">${tasks[index]['description']}</div>
         <div style="display:flex; gap :25px">
         <div class="titleTaskDialog">Due Date</div>
         <div class="dateDialogNum">${tasks[index]['date']}</div>

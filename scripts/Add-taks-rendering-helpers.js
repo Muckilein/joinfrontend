@@ -1,6 +1,8 @@
 let dummyContacts = [];
+let users = []
+let user;
 //let colorsCategory = [];
-let usersRegistered = [];
+//let usersRegistered = [];
 let dummy;              // helpvariable for creating the assignment list of a task
 let isSmallAdd;     // true if the window is gone in the smallscreen
 let prio = 2;   //  proprity of a task
@@ -48,35 +50,33 @@ let contacts2;
  * Loads the contacs from the remote server in dummyContacts
  */
 async function loadContacts() {
-    //contacts = [];
-    //contacts = JSON.parse(await getContact('contacts')).sort((a, b) => a.name.localeCompare(b.name));
     contacts2 = await getContactBE();
+    users = await getUsers();
+   
+    user = getActivUser(users);
     let i = 0;
     contacts2.forEach(element => { //colors[i % 9]
-        let a = { "name": element['name'], "email": element['email'], "id": element['id'] + '', "iconColor": element['iconColor'], "short": element['short'], "reg": true };
+        let a = { "name": element['name'], "email": element['email'], "id": element['id'], "iconColor": element['iconColor'], "short": element['short'], "reg": element['reg'] };
         i++;
         dummyContacts.push(a);
     });
     colorsCategory = await loadRemoteColor();
 }
 
-/**
- * Is used in loadContacts(). Fetches the contacts as a JSON Array
- * 
- * @param {string} key  key where the contacts are stored
- * @returns             JSON array that contains the list of the contats
- */
-async function getContact(key) {
-    const url = `${STORAGE_URL}?key=${key}&token=${STORAGE_TOKEN}`;
-    return fetch(url)
-        .then(res => res.json())
-        .then(res => {
-            if (res.data) {
-                return res.data.value;
-            }
-            throw `Could not find data with key "${key}".`;
-        });
+
+
+function getActivUser (users){
+  id = getidFromLocalStorage(); 
+  let us=null;
+  users.forEach((u)=>{    
+    if (u.id==id)
+    {
+        us = u
+    }
+  });
+  return us;
 }
+
 
 function getJ() {
     let j = {
@@ -109,28 +109,7 @@ function getJ() {
     return j;
 }
 
-async function setValues(url, newCat) {
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", 'Token ' + "826a8ea96595f1ae6f14e374ebc715d27dc2600f");
-    const requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: JSON.stringify(newCat),
-        redirect: 'follow'
-    };
-    try {
-        let resp = await fetch("http://127.0.0.1:8000/" + url, requestOptions);
-        let json = await resp.json();
-        console.log(resp);
-        console.log(json);
 
-    } catch (e) {
-        // Show error message
-        console.error(e);
-
-    }
-}
 
 async function save() {
     console.log("call save");
@@ -297,11 +276,11 @@ function renderMemberAddTask(id, checkboxes) {
  */
 function setCategory(cat, event) {
     stoppen(event);
-    chosenCategory = cat;
-    categoryColor = getTypeColorAddTask(cat);
+    chosenCategory = colorsCategory[cat];  
     expandedCategory = false;
-    let color = getTypeColorAddTask(chosenCategory);
-    document.getElementById('selectionCategory').innerHTML = `<div class="selectionChoice"  value=${chosenCategory}>${chosenCategory} <div class="circle"  style="background-color:${color} "></div></div>`;
+    let color = chosenCategory['color'];
+    let title = chosenCategory['title'];
+    document.getElementById('selectionCategory').innerHTML = `<div class="selectionChoice"  value=${title}>${title} <div class="circle"  style="background-color:${color} "></div></div>`;
 }
 
 /**
@@ -371,7 +350,7 @@ function renderInputCategory(event) {
  * creates a new Category with the earlier choosen  color and the name given in the input field
  * 
  */
-function newCategoryChoosen() {
+async function newCategoryChoosen() {
     chosenCategory = document.getElementById('newCategory').value;
 
     if (chosenCategory != "") {
@@ -380,8 +359,9 @@ function newCategoryChoosen() {
         // colorsCategory.push(elem);
         expandedCategory = false;
         //setTask('category', colorsCategory);// delete later
-        let cat = setValues('categoryAPI/', { "title": chosenCategory, "color": categoryColor });
-        colorsCategory.push(cat);
+        let c = { "title": chosenCategory, "color": categoryColor }
+        let cat = await makeCategory(c);
+        colorsCategory.push(c);
         console.log("created Category", cat);
         showCategory(categoryColor);
         document.getElementById('selectionCategory').innerHTML += newCategory;
@@ -456,11 +436,13 @@ function showCategory() {
     // checkboxes = form.querySelectorAll('input[type=checkbox]');
     if (!expandedCategory) {
         console.log(colorsCategory);
+        index = 0;
         colorsCategory.forEach(c => {
             if (c['title'] != undefined) {
                 cat += `
-            <div class="selectionChoice" onclick="setCategory('${c['title']}',event)" value="${c['title']}">${c['title']} <div class="circle"  style="background-color:${c['color']} "></div></div>`;
+            <div class="selectionChoice" onclick="setCategory('${index}',event)" value="${c['title']}">${c['title']} <div class="circle"  style="background-color:${c['color']} "></div></div>`;
             }
+            index++;
         })
 
         document.getElementById('selectionCategory').innerHTML = cat;
@@ -505,7 +487,7 @@ function isChecked() {
  */
 function checkValidity() {
     const errorMessage = !isChecked() ? 'At least one checkbox must be selected.' : '';
-
+    console.log(firstCheckbox);
     firstCheckbox.setCustomValidity(errorMessage);
     firstCheckbox.reportValidity(); // ist wichtig, dass es angezeigt wird
     setTimeout(clearfirst, 1500);

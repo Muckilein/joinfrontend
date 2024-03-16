@@ -17,10 +17,9 @@ async function includeHTML() {
 /**
  * Loads basic Inforamtions like Users, contacts...
  */
-async function loadBasics(){
+async function loadBasics(){   
     loadContacts();
-    await includeHTML();
-    await loadRemote();
+    await includeHTML();  
     await loadRemoteTodos();
     console.log(tasks);
     setTimeout(() => {
@@ -28,7 +27,7 @@ async function loadBasics(){
     }, 500);
     
     colorsCategory= await loadRemoteColor();
-    //await loadUsersAll();
+    
 }
  
 function changeAssignments(){
@@ -68,7 +67,7 @@ Loads: the contacts, the external html FileSystem, the tasks and renders the boa
 */
 
 async function initBoard() {
-    addTask = false;    
+    addTask = false;     
     await loadBasics();
     renderTasks();
     setTimeout(() => {
@@ -201,7 +200,8 @@ function isAreaEmpty() {
 function moveTo(num) {
     tasks[currentDraggedElement]['state'] = '' + num;
     renderTasks();
-    setTask('tasks', tasks);
+    setRemoteTodos(tasks[currentDraggedElement]);
+   
 }
 
 /**
@@ -251,10 +251,41 @@ function unshowCheckboxesEdit() {
     }
 }
 
+function getIndexOfSub(subs,element){
+  let i = 0;
+  let index = -1;
+  subs.forEach((s)=>{
+     if (s['title']== element.name){
+        index = i;
+     }
+     i++;
+  });
+  return index;
+}
+
 /**
  * Add the selected subtast to the task
  */
 function addSubtaskToTasks() {
+    let checkbox = document.getElementById("subtasksEdit");
+    let checkboxes = checkbox.querySelectorAll('[subEdit]')
+    //tasks[editIndex]['maxSubs']= checkboxes.length;
+    let subs = tasks[editIndex]['subtask'];
+    checkboxes.forEach(element => {
+        if (getIndexOfSub(subs,element) < 0) {
+            let su = {"id":"null","title":element.name, "checked":false};
+            tasks[editIndex]['subtask'].push(su);            
+        }
+    });
+    let i = 0;
+    checkboxes.forEach(element => {
+        if (element.checked) {
+            tasks[editIndex]['subtask'][i]['checked'] = true;
+        } else { tasks[editIndex]['subtask'][i]['checked'] = false; }
+        i++;
+    });
+}
+function addSubtaskToTasksOLD() { //--------------------------------------------------------------------------delete------------------
     let checkbox = document.getElementById("subtasksEdit");
     let checkboxes = checkbox.querySelectorAll('[subEdit]')
     //tasks[editIndex]['maxSubs']= checkboxes.length;
@@ -281,8 +312,12 @@ function addSubtaskToTasks() {
 function addSubtaskEdit() {
     let sub = document.getElementById('inputSub').value;
     if (sub != "") {
-        subsEdit.push(sub);
-        subsEditChecked.push(true);
+        let newSub = {
+            "id": 'null',
+            "title": sub,
+            "checked": true
+        };
+        subsEdit.push(newSub);       
         addSubEdit(subsEdit);
     }
 }
@@ -312,7 +347,7 @@ function addSubEdit(sub) {
     let checkboxes = document.getElementById('subtaskContainerEdit').querySelectorAll('[subEdit]');
     i = 0;
     checkboxes.forEach(element => {
-        element.checked = subsEditChecked[i];
+        element.checked = subsEdit[i]['checked'];
         i++;
     });
 
@@ -409,7 +444,7 @@ function displayTaskDetailsEdit(index) {
     let p = parseInt(tasks[index]['prio'], 10);
     selectPrio(p, 'prioEdit');
     document.getElementById('titleEdit').value = elem['title'];
-    document.getElementById('discriptionEdit').value = elem['discription'];
+    document.getElementById('descriptionEdit').value = elem['description'];
     document.getElementById('dateEdit').value = elem['date'];
     renderMemberDialog(index, 'memberDialogSectionEdit');
     document.getElementById('taskEdit').classList.add('gap');
@@ -433,12 +468,10 @@ function displayTaskDetailsEdit(index) {
 
 function editdialog(index) {
     editIndex = index;
-    subsEdit = [];
-    subsEditChecked = [];
+    subsEdit = [];   
     let i = 0;
     tasks[editIndex]['subtask'].forEach(element => {
-        subsEdit.push(element);
-        subsEditChecked.push(tasks[editIndex]['checked'][i]);
+        subsEdit.push(element);      
         i++;
     });
     document.getElementById('taskEdit').classList.remove('d-none');

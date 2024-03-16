@@ -4,7 +4,8 @@ let userName;
  */
 async function initSummary() {
     await includeHTML();
-    await loadRemote();
+    //await loadRemote();
+    await loadRemoteTodos();
     await tasksForSummary();
     await urgentTask();
     getTimeandGreets();
@@ -56,6 +57,7 @@ async function urgentTask() {
 function getTimeandGreets() {
     const urlParams = new URLSearchParams(window.location.search);
     userName = urlParams.get('name');
+    const id = urlParams.get('id');
     const greetingTextElement = document.getElementById('greetingText');
     const userElement = document.getElementById('user');
     let today = new Date();
@@ -71,8 +73,8 @@ function getTimeandGreets() {
         greetingTextElement.textContent = greeting + ',';
     }
 
-    setNameToHrefs(userName);
-
+    //setNameToHrefsNew(userName,user.id,'c0a6fc4b7bb130530b2a39f5d87beac12271762d');
+    setNameToHrefs(userName,id);
 };
 
 /**

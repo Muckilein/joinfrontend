@@ -273,7 +273,7 @@ textarea{
     font-family: 'Inter', sans-serif;
 }
 
-.discription {
+.description {
     width: 100%;
     border-radius: 10px;
     border: solid 1px #D1D1D1;
@@ -286,11 +286,11 @@ textarea{
 }
 
 
-.discription:focus {
+.description:focus {
     outline: none;
 }
 
-.discription::placeholder {
+.description::placeholder {
     color: #D1D1D1;
     font-size: 21px;
     font-style: normal;
@@ -658,7 +658,7 @@ select.selection option.o5 {
         margin-top: 10px;
     }
 
-    .discription {
+    .description {
         height: 93px;
         font-size: 16px;
     }
