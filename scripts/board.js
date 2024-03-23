@@ -17,49 +17,49 @@ async function includeHTML() {
 /**
  * Loads basic Inforamtions like Users, contacts...
  */
-async function loadBasics(){   
-    loadContacts();
-    await includeHTML();  
+async function loadBasics() {
+    await loadContacts();
+    await includeHTML();
+    colorsCategory = await loadRemoteColor();
     await loadRemoteTodos();
-    console.log(tasks);
     setTimeout(() => {
-        changeAssignments();
+       changeAssignments();      
+       renderTasks();
     }, 500);
+
     
-    colorsCategory= await loadRemoteColor();
-    
+
 }
- 
-function changeAssignments(){
-   console.log('call changeAssignments');
-    tasks.forEach((t)=>{
+
+function changeAssignments() {
+    console.log('call changeAssignments');
+    tasks.forEach((t) => {
         makeAssignmentList(t)
     });
 }
 
-function makeAssignmentList(t){
-    let taskAss = t['assignments'];    
-    let ass =[]
-    taskAss.forEach((ta)=>{
-       let id = ta['id'];      
-       let aU = getUserByID(id);      
-       if(aU!=null)
-       ass.push(getUserByID(id))
+function makeAssignmentList(t) {
+    let taskAss = t['assignments'];
+    let ass = []
+    taskAss.forEach((ta) => {
+        let id = ta['id'];
+        let aU = getUserByID(id);
+        if (aU != null)
+            ass.push(getUserByID(id))
     });
-    t['assignments']= ass;
-   }
-   
-   function getUserByID(id){
+    t['assignments'] = ass;
+}
+
+function getUserByID(id) {
     let u = null;
-      dummyContacts.forEach((c)=>{     
-        if(c['id']==id)
-        {
+    users.forEach((c) => {
+        if (c['id'] == id) {
             u = c;
-            return c;            
+            return c;
         }
-      });
-      return u;
-   }
+    });
+    return u;
+}
 
 /** 
 Initialized the board.
@@ -67,9 +67,9 @@ Loads: the contacts, the external html FileSystem, the tasks and renders the boa
 */
 
 async function initBoard() {
-    addTask = false;     
+    addTask = false;
     await loadBasics();
-    renderTasks();
+    
     setTimeout(() => {
         renderTasks();
     }, 1500);
@@ -139,13 +139,14 @@ function closeDialog(num) {
  * @param {number} index  index of the task in "tasks"
  * @returns true if the task is filtered out, false if the task is not filtered out
  */
-function filterTask(index) {
+function filterTask(index) {   
     let filterValue = document.getElementById('input').value.toLowerCase();
-
-    let title = tasks[index]['title'];
-    let descrip = tasks[index]['discription'];
+     
+    let title = tasks[index]['title'].toLowerCase();
+    let descrip = tasks[index]['description'].toLowerCase();
+   
     if (!filterValue == "") {
-        return (!(title.toLowerCase().includes(filterValue) || descrip.toLowerCase().includes(filterValue)));
+        return (!(title.includes(filterValue) || descrip.includes(filterValue)));
     }
     return false;
 }
@@ -201,7 +202,7 @@ function moveTo(num) {
     tasks[currentDraggedElement]['state'] = '' + num;
     renderTasks();
     setRemoteTodos(tasks[currentDraggedElement]);
-   
+
 }
 
 /**
@@ -218,7 +219,7 @@ function clickLoop() {
  * @param {number} stateArea   Number of the state area (0 is "To do")   
  * @returns                    return the HTML code of the placeholder "No task in progress", when a state area has no tasks
  */
-function getNotTask(stateArea,cat) {
+function getNotTask(stateArea, cat) {
     return `<div id="noTask${stateArea}" class="noTask d-none";>No task in ${cat}</div>`;
 }
 
@@ -228,12 +229,12 @@ function getNotTask(stateArea,cat) {
  * @param {Array} array Contains an array with bool that shows weather a subtasktasks was made or not (true means have to to them, false done)
  * @returns             Amount of subs, that are made
  */
-function getAmountMadeSubs(index){
+function getAmountMadeSubs(index) {
     let t = tasks[index];
     let subs = t['subtask'];
     let i = 0;
-    subs.forEach(s=>{
-        if(s['checked']) i++;
+    subs.forEach(s => {
+        if (s['checked']) i++;
     });
     return i;
 }
@@ -251,16 +252,16 @@ function unshowCheckboxesEdit() {
     }
 }
 
-function getIndexOfSub(subs,element){
-  let i = 0;
-  let index = -1;
-  subs.forEach((s)=>{
-     if (s['title']== element.name){
-        index = i;
-     }
-     i++;
-  });
-  return index;
+function getIndexOfSub(subs, element) {
+    let i = 0;
+    let index = -1;
+    subs.forEach((s) => {
+        if (s['title'] == element.name) {
+            index = i;
+        }
+        i++;
+    });
+    return index;
 }
 
 /**
@@ -272,9 +273,9 @@ function addSubtaskToTasks() {
     //tasks[editIndex]['maxSubs']= checkboxes.length;
     let subs = tasks[editIndex]['subtask'];
     checkboxes.forEach(element => {
-        if (getIndexOfSub(subs,element) < 0) {
-            let su = {"id":"null","title":element.name, "checked":false};
-            tasks[editIndex]['subtask'].push(su);            
+        if (getIndexOfSub(subs, element) < 0) {
+            let su = { "id": "null", "title": element.name, "checked": false };
+            tasks[editIndex]['subtask'].push(su);
         }
     });
     let i = 0;
@@ -317,7 +318,7 @@ function addSubtaskEdit() {
             "title": sub,
             "checked": true
         };
-        subsEdit.push(newSub);       
+        subsEdit.push(newSub);
         addSubEdit(subsEdit);
     }
 }
@@ -365,7 +366,7 @@ function openSubtasks() {
         expandSub = true;
         // addSubEdit(tasks[editIndex]['subtask']);
         addSubEdit(subsEdit);
-       
+
     } else {
         checkbox.classList.add('d-none');
         document.getElementById('subtaskContainerEdit').classList.remove('paddingButtomEdit');
@@ -425,7 +426,7 @@ function calculatePrio(priority) {
  */
 function getActiveTasks(index) {
     let list = [];
-    let subs = tasks[index]['subtask'];   
+    let subs = tasks[index]['subtask'];
     for (let i = 0; i < subs.length; i++) {
         if (!subs[i]['checked']) {
             list.push(subs[i]['title']);
@@ -468,10 +469,10 @@ function displayTaskDetailsEdit(index) {
 
 function editdialog(index) {
     editIndex = index;
-    subsEdit = [];   
+    subsEdit = [];
     let i = 0;
     tasks[editIndex]['subtask'].forEach(element => {
-        subsEdit.push(element);      
+        subsEdit.push(element);
         i++;
     });
     document.getElementById('taskEdit').classList.remove('d-none');

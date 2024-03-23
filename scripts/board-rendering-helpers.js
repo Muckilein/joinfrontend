@@ -19,8 +19,8 @@ let addedEditsubs = false;
 /**
  * render als task on the board
  */
-function renderTasks() {
-    //clears up all areas
+async function renderTasks() {
+    //clears up all areas   
     document.getElementById('taskArea0').innerHTML = getNotTask(0,'to do');
     document.getElementById('taskArea1').innerHTML = getNotTask(1,'progress');
     document.getElementById('taskArea2').innerHTML = getNotTask(2,'awaiting feedback');
@@ -164,7 +164,7 @@ function editTask(id) {
     //in add-task.js checks if at least one checkbox with attribut checkEdit is clicked
     checkboxValidation(id, '[checkEdit]');
     // if formvalidation was succesful
-    if (checked) {
+    if (checked) {             
        editTaskCorrectForm(index,id);
     }
     else {
@@ -180,23 +180,7 @@ function editTask(id) {
  * @param {number} index 
  * @param {String} id     id of the Form object, that submits the editTask 
  */
-function editTaskCorrectFormOLD(index,id){
-    if (!expandSub) { openSubtasks(); }
-    addSubtaskToTasks();
-    //reads the required informations from all kind of inputs and set the information to the task
-    tasks[index]['title'] = document.getElementById('titleEdit').value;
-    tasks[index]['discription'] = document.getElementById('discriptionEdit').value;
-    tasks[index]['prio'] = '' + prio;
-    tasks[index]['assignments'] = getAssignmentsEdit(id);
-    tasks[index]['date'] = document.getElementById('dateEdit').value;
 
-    setTask('tasks', tasks);
-    addedEdit = false;
-    document.getElementById('taskEdit').classList.add('d-none');
-    document.getElementById('dialogTask').classList.add('d-none');
-    document.getElementById('bordbaner').classList.remove('d-none');
-    renderTasks();
-}
 function editTaskCorrectForm(index,id){
     console.log("Call Edit Correct Form");
     if (!expandSub) { openSubtasks(); }
@@ -227,11 +211,12 @@ function editTaskCorrectForm(index,id){
  * @param {number} num  the state in which the task is located: e.g. 0 for "To do", 1 for In progress
  */
 async function openAddTask(num) {
+   
     dialog = true;
     state = num;
     document.getElementById('assignedIcon').innerHTML = '';
     document.getElementById('subtasksArea').innerHTML = '';
-    addDummyContacts();
+    addDummyUser();
     numberSubtasks=1;
     //fullscreen
     if (window.innerWidth > 800) {
@@ -249,10 +234,9 @@ async function openAddTask(num) {
 /**
  * Adds the first two contacts of the Contactlist in the Assignment checkbox
  */
-function addDummyContacts(){
+function addDummyUser(){
     if (!added) {
-        addContact(dummyContacts[0], '');
-        //addContact(dummyContacts[1], '');
+        addContact(users[0], '');       
         added = true;
     }
 }
@@ -315,6 +299,7 @@ function showAssignmentCheckboxesEdit(index) {
 
     }
     //renders all the assigments of the tasks in the checkbox
+    
     if (!addedEdit) {
         addContactEdit(assing); addedEdit = true;
     }
@@ -344,8 +329,8 @@ function addContactEdit(elem) {
     let t = "";
     elem.forEach(element => {
         t += ` <div class="selectGapArrow" onclick="stoppen(event)">
-        <label for="selContEdit${element['id']}">${element['name']}</label>
-        <input checkEdit type="checkbox" id="selContEdit${element['id']}" name="${element['name']}" />
+        <label for="selContEdit${element['id']}">${element['username']}</label>
+        <input checkEdit type="checkbox" id="selContEdit${element['id']}" name="${element['username']}" />
         </div>`;
     });
     document.getElementById('assignmentChoicesEdit').innerHTML = '' + t + getInviteNewAssignment();
@@ -387,7 +372,7 @@ function getAssignmentsEdit(id) {
 function isContactExisting(cont) {
     let ret = false;
     dummyContacts.forEach(e => {
-        if (e['name'] == cont['name']) {
+        if (e['username'] == cont['username']) {
             ret = true;
         }
 
@@ -402,9 +387,9 @@ function isContactExisting(cont) {
 function filterExistingAssignments(assingments) {
     let ass = [];
     assingments.forEach(a => {
-        if (isContactExisting(a)) {
+       // if (isContactExisting(a)) {
             ass.push(a);
-        }
+       // }
     })
     return ass;
 }
@@ -426,13 +411,13 @@ function renderMemberDialog(index, id) {
         memberList.forEach(element => {
             member.innerHTML += ` <div style="display: flex; gap:25px;align-items: center;">
         <div class="memberDialog" style=" background-color: ${element['iconColor']};">${element['short']}</div>
-        <div class="memberNameDialog">${element['name']}</div>
+        <div class="memberNameDialog">${element['username']}</div>
     </div></div>`
             l++;
 
         });
     }
-    tasks[index]['assignments'] = memberList;
+    //tasks[index]['assignments'] = memberList;
 }
 
 
@@ -444,7 +429,7 @@ function renderMemberDialog(index, id) {
  */
 function renderMember(index) {
     let member = document.getElementById('memberArea' + index);
-    let memberList = tasks[index]['assignments'];
+    let memberList = tasks[index]['assignments'];    
     memberList = filterExistingAssignments(tasks[index]['assignments']);
     let l = 0;
     if (memberList.length > 0) {

@@ -5,13 +5,14 @@ let colorsIcon = ['#FF7A00', '#9327FF', '#29ABE2', '#FC71FF', '#02CF2F', '#AF161
 let nameUser = "";
 setMadeSmall();
 window.addEventListener("resize", resizeListenerContacts);
-contacts =[];
-users =[];
+contacts = [];
+users = [];
 /**
  * sets the initial values for madeSmall
  */
 function setMadeSmall() {
   if (window.innerWidth <= 800) {
+    newContact
     madeSmall = true;
   } else { madeSmall = false; }
 }
@@ -55,17 +56,16 @@ async function loadContactsOld() {
 
 
 async function loadContacts() {
-  //contacts = [];
-  //contacts = JSON.parse(await getContact('contacts')).sort((a, b) => a.name.localeCompare(b.name));
-  let c=[]
-  c  =  await getContactBE();
+  id = getidFromLocalStorage();
+  let c = []
+  c = await getContactBE(id);
   users = await getUsers();
   let i = 0;
   c.forEach(element => { //colors[i % 9]
-      let a = { "name": element['name'], "email": element['email'], "id": element['id'] + '', "iconColor": element['iconColor'], "short": element['short'], "reg": element['reg'] };
-      i++;
-      contacts.push(a);
-      contacts.sort((a, b) => a.name.localeCompare(b.name));
+    let a = { "username": element['username'], "email": element['email'], "id": element['id'] + '', "iconColor": element['iconColor'], "short": element['short'] };
+    i++;
+    contacts.push(a);
+    contacts.sort((a, b) => a.username.localeCompare(b.username));
   });
   //await loadRemoteColor();
 }
@@ -75,15 +75,15 @@ async function loadContacts() {
  * alphabetical. LettersHtml and contactListHtml is a created function only for returning the HTML part.
  */
 async function renderContacts() {
-  await loadContacts();
+  if (contacts.length == 0) { await loadContacts(); }
 
   let containerContactlist = document.getElementById('contactList');
   containerContactlist.innerHTML = "";
 
   for (let i = 0; i < contacts.length; i++) {
     let contact = contacts[i];
-    let currentLetter = contact['name'].charAt(0).toUpperCase();
-    let prevLetter = i > 0 ? contacts[i - 1]['name'].charAt(0).toUpperCase() : null;
+    let currentLetter = contact['username'].charAt(0).toUpperCase();
+    let prevLetter = i > 0 ? contacts[i - 1]['username'].charAt(0).toUpperCase() : null;
 
     if (currentLetter !== prevLetter) {
       containerContactlist.innerHTML += lettersHtml(currentLetter);
@@ -105,7 +105,7 @@ async function addNameToHref() {
     nameUser = msg;
 
   }
-  setNameToHrefs(nameUser,id);
+  setNameToHrefs(nameUser, id);
 }
 
 /**
@@ -113,50 +113,64 @@ async function addNameToHref() {
  * secondname. After that it will create the short-Icon. Max Mustermann -> MM . After that it will push everything
  * in the current place from the contacts-array and save so the changes.
  */
-async function saveContactChanges(i) {
+async function saveContactChanges(i) { // --------delete----------------
 
-  let name = document.getElementById('changeName').value;
+  //let name = document.getElementById('changeName').value;
   let email = document.getElementById('changeEmail').value;
+  let regUser = filterFromUser(email);
   let phone = document.getElementById('changePhone').value;
-  let firstName = name.trim().split(' ')[0]; // Erster Name
-  let lastName = name.trim().split(' ')[1]; // Nachname
-  let short = (firstName ? firstName.charAt(0) : '') + (lastName ? lastName.charAt(0) : '');
-  contacts[i].name = name;
-  contacts[i].email = email;
-  contacts[i].phone = phone;
-  contacts[i].short = short;
+  id = await getidFromLocalStorage();
+  // let firstName = name.trim().split(' ')[0]; // Erster Name
+  // let lastName = name.trim().split(' ')[1]; // Nachname
+  // let short = (firstName ? firstName.charAt(0) : '') + (lastName ? lastName.charAt(0) : '');
+  if (regUser) {
+    contacts[i].username = regUser.username;
+    contacts[i].email = email;
+    contacts[i].phone = phone;
+    contacts[i].short = regUser.short;
 
-  await setItem('contacts', JSON.stringify(contacts));
+    //await setItem('contacts', JSON.stringify(contacts));
+    //let con= await makeContact(id, contact);
+    let newContact = document.getElementById('newContact');
+    newContact.classList.add('d-none');
+    showContactDetails(i);
+    renderContacts();
+  }
 
-  let newContact = document.getElementById('newContact');
-  newContact.classList.add('d-none');
-  showContactDetails(i);
-  renderContacts();
+}
+
+function filterFromUser(email) {
+  regUser = null;
+  users.forEach((u) => {
+    if (u.email == email) {
+      regUser = u;
+    }
+  }); 
+  return regUser;
 }
 
 /**
  * This will delete the selected contact from the array contacts.
  */
 async function deleteContact(i) {
-  if (!contacts[i]['reg'])
- { 
-  contacts.splice(i, 1);
-  await setItem('contacts', JSON.stringify(contacts));
-  let newContact = document.getElementById('newContact');
-  newContact.classList.add('d-none');
-  document.getElementById('resetName').innerHTML = "";
-  document.getElementById('resetInfo').innerHTML = "";
-  document.getElementById('resetEmailPhone').innerHTML = "";
-  await renderContacts();
-  document.getElementById('contactList').classList.remove('d-none');
-  document.getElementById('responsiveButton').classList.remove('d-none');
-  document.getElementById('responsiveHeadlinePhrase').classList.add('d-none');
-  document.getElementById('responsiveDelete').classList.add('d-none');
-  document.getElementById('responsiveEdit').classList.add('d-none');
-  document.getElementById('backArrowResponsive').classList.add('d-none'); 
- }else{
-  console.log("Not allowed to delete this.")
- } 
+  if (!contacts[i]['reg']) {
+    contacts.splice(i, 1);
+    await setItem('contacts', JSON.stringify(contacts));
+    let newContact = document.getElementById('newContact');
+    newContact.classList.add('d-none');
+    document.getElementById('resetName').innerHTML = "";
+    document.getElementById('resetInfo').innerHTML = "";
+    document.getElementById('resetEmailPhone').innerHTML = "";
+    await renderContacts();
+    document.getElementById('contactList').classList.remove('d-none');
+    document.getElementById('responsiveButton').classList.remove('d-none');
+    document.getElementById('responsiveHeadlinePhrase').classList.add('d-none');
+    document.getElementById('responsiveDelete').classList.add('d-none');
+    document.getElementById('responsiveEdit').classList.add('d-none');
+    document.getElementById('backArrowResponsive').classList.add('d-none');
+  } else {
+    console.log("Not allowed to delete this.")
+  }
 }
 
 /**
@@ -164,32 +178,41 @@ async function deleteContact(i) {
  * and push it into the remote server.
  */
 async function newContact() {
-  let name = document.getElementById('newName').value;
+  
   let email = document.getElementById('newEmail').value;
+  let regUser = filterFromUser(email);
+  id = await getidFromLocalStorage();
   let phone = document.getElementById('newPhone').value;
   let form = document.querySelector('form');
-  let iconColor = colorsIcon[(contacts.length) % 9];
-  if (!form.checkValidity()) {
-    form.reportValidity();
-    return;
-  }
-  // get the first letter from firstName and lastName
-  let firstName = name.trim().split(' ')[0];
-  let lastName = name.trim().split(' ')[1];
-  let short = (firstName ? firstName.charAt(0) : '') + (lastName ? lastName.charAt(0) : '');
-  let contact = {
-    name,
-    email,
-    phone,
-    short,
-    iconColor,
-  };
-  contacts.push(contact); 
-  await setItem('contacts', JSON.stringify(contacts));
+  if (regUser) {   
+    id = getidFromLocalStorage();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;   
+     }      
+  
+    let contact = {
+      "username": regUser.username,
+      "email": email,
+      "phone": phone,
+      "short": regUser.short,
+      "iconColor": regUser.iconColor,
+      "user": id
+    };
 
-  let newContact = document.getElementById('newContact');
-  newContact.classList.add('d-none');
-  renderContacts();
+    let contactData = await makeContact(id, contact);
+    console.log(contactData);
+    contacts.push(contactData);
+    console.log(contacts);
+    let newContact = document.getElementById('newContact');
+    newContact.classList.add('d-none');
+    renderContacts();
+  }else{
+   document.getElementById('requestMailMessage').classList.add('red');
+   setTimeout(()=>{
+    document.getElementById('requestMailMessage').classList.remove('red');
+   },2000);
+  }
 }
 
 /**
@@ -203,14 +226,14 @@ function showContactDetails(i) {
   container.innerHTML = "";
 
   if (window.innerWidth >= 800) {
-    container.innerHTML = showContactDetailsHtml(contact, i);   
+    container.innerHTML = showContactDetailsHtml(contact, i);
   } else {
     detailDialog = true;
-    container.innerHTML = showContactDetailsHtml(contact, i);   
+    container.innerHTML = showContactDetailsHtml(contact, i);
     contactDetailsSmall();
   }
 }
-function contactDetailsSmall(){
+function contactDetailsSmall() {
   document.getElementById('contactList').classList.add('d-none');
   document.getElementById('responsiveButton').classList.add('d-none');
   document.getElementById('responsiveHeadlinePhrase').classList.remove('d-none');
@@ -238,9 +261,9 @@ function responsiveContactDetailsBackButton() {
  * Show the pop-up window for new contact.
  */
 function showPopUpWindowNewContact() {
-  let newContact = document.getElementById('newContact');  
+  let newContact = document.getElementById('newContact');
   newContact.classList.remove('d-none');
-  newContact.innerHTML = newContactPopUpHtml();  
+  newContact.innerHTML = newContactPopUpHtml();
 }
 
 /**
@@ -300,7 +323,7 @@ function contactListHtml(contact, i) {
     <div class="contactContainer" onclick="showContactDetails(${i})">
       <div class="profile " style="background-color:${contact['iconColor']}">${contact['short']}</div>
       <div class="contact">
-        <div class="name">${contact['name']}</div>
+        <div class="name">${contact['username']}</div>
         <a  class="email">${contact['email']}</a>
       </div>
     </div>
@@ -313,7 +336,7 @@ function showContactDetailsHtml(contact, i) {
 <div class="nameContainer" id="resetName">
                       <div class="detailsProfile" style="background-color:${contacts[i]['iconColor']}">${contacts[i]['short']}</div>
                       <div class="detailsName">
-                          <h2>${contact['name']}</h2>
+                          <h2>${contact['username']}</h2>
                           <div class="addTask">
                           <a href="./add-task.html?name=${nameUser}"><svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M8.5 1V16" stroke="#29ABE2" stroke-width="2" stroke-linecap="round"/>
@@ -367,7 +390,7 @@ function newContactPopUpHtml() {
       <span class="mb-120">
       <div class="closeAddContactButton" onclick="closePopUpWindow()"><img class="" src="../img/cancelIcon.png"></div>
           <form id"formContact" onsubmit="newContact();return false;">
-              <input type="text"  id="newName" class="avatarIcon" placeholder="Name" required>
+              <div id="requestMailMessage"> Bitte geben sie die E-MailAdresse eines registrierten Nutzers ein</div>
               <input type="email" id="newEmail" class="emailIcon" placeholder="Email" required>
               <input type="number" id="newPhone" class="phoneIcon" placeholder="Phone">
           <div class="buttonContainer">
@@ -381,6 +404,7 @@ function newContactPopUpHtml() {
 </div>
 `
 }
+//<input type="text"  id="newName" class="avatarIcon" placeholder="Name" required>
 
 function editContactHtml(i) {
   return `
@@ -397,7 +421,7 @@ function editContactHtml(i) {
         <span class="mb-30 pt60">
         <div class="closeAddContactButton" onclick="closePopUpWindow()"><img class="" src="../img/cancelIcon.png"></div>
             <form id="edCont" onsubmit="saveContactChanges(${i});return false;">
-                <input required type="text" id="changeName" class="avatarIcon" placeholder="Name" value="${contacts[i]['name']}">
+                <input required type="text" id="changeName" class="avatarIcon" placeholder="Name" value="${contacts[i]['username']}">
                 <input required type="email" id="changeEmail" class="emailIcon" placeholder="Email" value="${contacts[i]['email']}">
                 <input type="number" id="changePhone" class="phoneIcon" placeholder="Phone" value="${contacts[i]['phone']}">
             </form>

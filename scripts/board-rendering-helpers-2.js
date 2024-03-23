@@ -35,7 +35,7 @@ async function addNameToHref() {
  */
 async function deleteTask(index, full) {
     tasks.splice(index, 1);
-    await setTask('tasks', tasks);
+    deleteTodo(index);
     if (full) {
         closeTask();
     } else {

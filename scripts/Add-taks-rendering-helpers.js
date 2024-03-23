@@ -1,6 +1,7 @@
 let dummyContacts = [];
 let users = []
 let user;
+let id;
 //let colorsCategory = [];
 //let usersRegistered = [];
 let dummy;              // helpvariable for creating the assignment list of a task
@@ -50,13 +51,14 @@ let contacts2;
  * Loads the contacs from the remote server in dummyContacts
  */
 async function loadContacts() {
-    contacts2 = await getContactBE();
+    id = getidFromLocalStorage();
+    contacts2 = await getContactBE(id);
     users = await getUsers();
    
-    user = getActivUser(users);
+    user = getActivUser(users,id);
     let i = 0;
     contacts2.forEach(element => { //colors[i % 9]
-        let a = { "name": element['name'], "email": element['email'], "id": element['id'], "iconColor": element['iconColor'], "short": element['short'], "reg": element['reg'] };
+        let a = { "username": element['username'], "email": element['email'], "id": element['id'], "iconColor": element['iconColor'], "short": element['short'] };
         i++;
         dummyContacts.push(a);
     });
@@ -65,8 +67,8 @@ async function loadContacts() {
 
 
 
-function getActivUser (users){
-  id = getidFromLocalStorage(); 
+function getActivUser (users,id){
+  //id = getidFromLocalStorage(); 
   let us=null;
   users.forEach((u)=>{    
     if (u.id==id)
@@ -92,7 +94,7 @@ function getJ() {
             "id": 3,
             "title": "Development"
         },
-        "assignments": [{ "id": 4, "name": "AnniMaus" }],
+        "assignments": [{ "id": 4, "username": "AnniMaus" }],
         "subtask": [
             {
                 "id": 46,
@@ -143,8 +145,8 @@ async function save() {
  * @param {string} n  Saves the JSON object of a contact with the name n in the variable 'dummy'
  */
 function getJSONContact(n) {
-    dummyContacts.forEach(element => {
-        if (element['name'] == n) {
+    users.forEach(element => {
+        if (element['username'] == n) {
             dummy = element;
             return dummy;
         };
@@ -217,8 +219,8 @@ function sizeAction() {
 
 function addContact(elem, add) {
     let t = ` <div class="selectGapArrow" onclick="stoppen(event)">
-    <label style="cursor:pointer"  for="selCont${add + '' + elem['id']}">${elem['name']}</label>
-    <input check${add} type="checkbox" id="selCont${add + '' + elem['id']}" name="${elem['name']}" style="cursor:pointer" />
+    <label style="cursor:pointer"  for="selCont${add + '' + elem['id']}">${elem['username']}</label>
+    <input check${add} type="checkbox" id="selCont${add + '' + elem['id']}" name="${elem['username']}" style="cursor:pointer" />
     </div>`;
     let cont = document.getElementById('assignmentChoices' + add).innerHTML;
     document.getElementById('assignmentChoices' + add).innerHTML = '' + t + cont;
@@ -234,7 +236,7 @@ function addContact(elem, add) {
 function getMemberByName(name) {
     let ret = {};
     dummyContacts.forEach(cont => {
-        if (cont['name'] == name) { ret = cont; }
+        if (cont['username'] == name) { ret = cont; }
     });
     return ret;
 }
@@ -278,7 +280,7 @@ function setCategory(cat, event) {
     stoppen(event);
     chosenCategory = colorsCategory[cat];  
     expandedCategory = false;
-    let color = chosenCategory['color'];
+    let color = chosenCategory['iconColor'];
     let title = chosenCategory['title'];
     document.getElementById('selectionCategory').innerHTML = `<div class="selectionChoice"  value=${title}>${title} <div class="circle"  style="background-color:${color} "></div></div>`;
 }
@@ -361,8 +363,7 @@ async function newCategoryChoosen() {
         //setTask('category', colorsCategory);// delete later
         let c = { "title": chosenCategory, "color": categoryColor }
         let cat = await makeCategory(c);
-        colorsCategory.push(c);
-        console.log("created Category", cat);
+        colorsCategory.push(c);       
         showCategory(categoryColor);
         document.getElementById('selectionCategory').innerHTML += newCategory;
         document.getElementById('colorChoice').classList.add('d-none');

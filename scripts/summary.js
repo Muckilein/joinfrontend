@@ -5,7 +5,8 @@ let userName;
 async function initSummary() {
     await includeHTML();
     //await loadRemote();
-    await loadRemoteTodos();
+    await loadRemoteTodos();   
+    await loadRemoteTodos(); 
     await tasksForSummary();
     await urgentTask();
     getTimeandGreets();

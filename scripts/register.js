@@ -1,7 +1,7 @@
 let users = [];
 let email;
 let user;
-
+let colorsIcon = ['#FF7A00', '#9327FF', '#29ABE2', '#FC71FF', '#02CF2F', '#AF1616', '#462F8A', '#FFC700', '#0223cf'];
 
 // const STORAGE_TOKEN = 'EU3DCTQFLIIRYKT20VZ7FI6JEYQ6G4WUYDV99ESF';  
 // const STORAGE_TOKEN = '7WLO2N6502EXUOLVYTZHZH3VTBY404CF2A5ZADMU';  
@@ -70,8 +70,12 @@ function getNewUserFromInputs() {
         "password": passwordInput.value,
         "password2": passwordInput.value,
         "first_name":split[0],
-        "last_name":split[1]
-    };
+        "last_name":split[1],
+       // "iconColor":colorsIcon[Math.random()*9],
+        "iconColor":colorsIcon[5],
+        "short":split[0][0]+split[1][0],
+        "phone":"Phone Number"
+        };
 }
 
 function displayEmailExistsMessage() {
@@ -191,16 +195,21 @@ async function loginUser(event) {
       console.log(json);
       setToken( json.token);
       id =json['user_id'];
-      localStorage.setItem('id',id);       
-      let user = await getUserbyId(id);      
-      console.log("id is",id);
-      console.log(user);
-      // TODO: Redirect
-      window.location.href = `./html/summary.html?name=${user.username}&id=${id}`;     
-    } catch(e){
-      // Show error message
-      console.error(e);
+      if(id==undefined){
 
+      }else{
+        localStorage.setItem('id',id); 
+        let user = await getUserbyId(id);    
+        localStorage.setItem('username',user.username);    
+               // TODO: Redirect
+        window.location.href = `./html/summary.html?name=${user.username}&id=${id}`;   
+        //window.location.href = `./html/board.html?name=${user.username}&id=${id}`;  
+      }
+   
+    } catch(e){
+      // Show error message    
+      console.error(e);
+      window.location.href = `./html/index.html`;
     }
    // setDataToStorage(user,check,loginError);       
 }
@@ -417,7 +426,7 @@ async function onPageLoad() {
  * 
  * @returns {Object|null} - The user object for password reset, or null if not found.
  */
-async function getPasswordResetUser() {
+async function getPasswordResetUser() { //---------------delete----------------------------
     await loadUsersReset();
     let user = users.find(u => u.email == email);
     return user;
@@ -428,6 +437,25 @@ function getEmailUrl() {
     const urlParams = new URLSearchParams(queryString);
     const email = urlParams.get('email');
     return email;
+}
+
+function resetPassword(){
+    fetch('http://127.0.0.1:8000/reset_password/')
+    .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then(data => {
+        //  Fügen Sie den HTML-Inhalt in das Element mit der ID "passwordResetPage" ein
+         document.getElementById('login-container').innerHTML = data;
+    //   const newWindow = window.open();
+    //   newWindow.document.write(data);
+      })
+      .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+      });
 }
 
 

@@ -25,6 +25,7 @@ async function loadBasicsAddTask() {
     await includeHTML();
     //await loadRemote();
     colorsCategory = await loadRemoteColor();
+    await loadRemote();
     addContact(dummyContacts[0], '');
     console.log(dummyContacts)
     //addContact(dummyContacts[1], '');
@@ -361,14 +362,15 @@ function isAllreadyInSelection(name, add) {
  * @param {string} add  'Edit' add a new contact to the checkboxes in the assignment selection of a task in Edit-mode. When its '' its called in add-task mode
  */
 function addAssignment(add) {
-    let mail = document.getElementById('mailContact' + add).value;
+    let email = document.getElementById('mailContact' + add).value;
     let b = false;
-    dummyContacts.forEach(element => {
-        if (element['email'] == mail) {
+    console.log(users);
+    users.forEach(element => {
+        if (element['email'] == email) {
             //dummyContact = element;
-            if (!isAllreadyInSelection(element['name'], add)) {
+            if (!isAllreadyInSelection(element['username'], add)) {                              
                 addContact(element, add);
-                changeSelect(add);
+                changeSelect(add);                             
 
             } else {
                 document.getElementById('mailContact' + add).value = 'Schon zugewiesen';

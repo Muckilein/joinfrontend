@@ -104,6 +104,10 @@ body {
     height: calc(100vh - 80px);
 }
 
+.red{
+    color:red;
+}
+
 /* --- Content-ContactList --- */
 
 .contactList {

@@ -31,15 +31,15 @@ async function includeHTML() {
  * 
  * @param {string} userNameAddTask  username
  */
-function setNameToHrefs(userNameAddTask,id) {
+function setNameToHrefs(userNameAddTask, id) {
     let other = `&id=${id}`;
-    document.getElementById('menu_board').href = `board.html?name=${userNameAddTask}`+other;
-    document.getElementById('menu_add-task').href = `add-task.html?name=${userNameAddTask}`+other;
-    document.getElementById('menu_contacts').href = `contacts.html?name=${userNameAddTask}`+other;
-    document.getElementById('menu_summary').href = `summary.html?name=${userNameAddTask}`+other;
-    document.getElementById('menu_legal-notice').href = `legal-notice.html?name=${userNameAddTask}`+other;
-    document.getElementById('helpId').href = `help.html?name=${userNameAddTask}`+other;
-    document.getElementById('menu_help').href = `help.html?name=${userNameAddTask}`+other;
+    document.getElementById('menu_board').href = `board.html?name=${userNameAddTask}` + other;
+    document.getElementById('menu_add-task').href = `add-task.html?name=${userNameAddTask}` + other;
+    document.getElementById('menu_contacts').href = `contacts.html?name=${userNameAddTask}` + other;
+    document.getElementById('menu_summary').href = `summary.html?name=${userNameAddTask}` + other;
+    document.getElementById('menu_legal-notice').href = `legal-notice.html?name=${userNameAddTask}` + other;
+    document.getElementById('helpId').href = `help.html?name=${userNameAddTask}` + other;
+    document.getElementById('menu_help').href = `help.html?name=${userNameAddTask}` + other;
 }
 
 /**
@@ -105,23 +105,31 @@ async function getItem(key) {
  * @param {string} key - key where the objects is stored remote.
  * @returns - returns the data.value
  */
-async function getTasks(key) {
-    const url = `${STORAGE_URL}?key=${key}&token=${STORAGE_TOKEN}`;
-    p = await fetch(url).then(resp => resp.json()).then(resp => resp.data.value);
-    return p;
-}
+// async function getTasks(key) { //--------------delete---------------------------------------
+//     const url = `${STORAGE_URL}?key=${key}&token=${STORAGE_TOKEN}`;
+//     p = await fetch(url).then(resp => resp.json()).then(resp => resp.data.value);
+//     return p;
+// }
 
-async function logout(){
+async function logout() {
     const url = "http://127.0.0.1:8000/logout/"
     await loadRemoteNew(url);
     localStorage.removeItem('token');
-    window.location.href = `/index.html`; 
+    localStorage.removeItem('id');
+    localStorage.removeItem('username');
+    window.location.href = `/index.html`;
 }
 
 
-async function getContactBE() {
-    const url = "http://127.0.0.1:8000/contacts/";
+async function getContactBE(id) {
+    const url = "http://127.0.0.1:8000/contacts/" + id + "/";
     let co = await loadRemoteNew(url)
+    return co;
+}
+
+async function makeContact(id, contact) {
+    const url = "http://127.0.0.1:8000/contacts/" + id + "/";
+    let co = saveRemoteNew(url, contact, 'POST', true);
     return co;
 }
 
@@ -134,14 +142,8 @@ async function getUsers() {
 async function loadRemoteColor() {
     const url = "http://127.0.0.1:8000/categoryAPI/"
     cat = await loadRemoteNew(url)
-    console.log('loadremotecolors',cat);
+    console.log('loadremotecolors', cat);
     return cat;
-}
-
-async function loadRemoteTodos() {
-    const url = "http://127.0.0.1:8000/createTodoAPI/"
-    tasks = await loadRemoteNew(url);
-    return tasks
 }
 
 /**
@@ -152,51 +154,69 @@ async function setRemoteTodos(task) {
     let id = task['id'];
     const url = "http://127.0.0.1:8000/createTodoAPI/" + id + "/";
     console.log("url to send ", url);
-    saveRemoteNew(url, task, 'PUT',true);
+    saveRemoteNew(url, task, 'PUT', true);
 }
 
-async function makeCategory(newCat) {    
+async function deleteTodo(id) {   
+    const url = "http://127.0.0.1:8000/createTodoAPI/" + id + "/";   
+    saveRemoteNew(url, {}, 'DELETE', true);
+}
+
+async function makeCategory(newCat) {
     const url = "http://127.0.0.1:8000/categoryAPI/";
     console.log("url to send ", url);
-    saveRemoteNew(url, newCat, 'POST',true);
+    saveRemoteNew(url, newCat, 'POST', true);
 }
-async function makeNewTodos(task) {    
+async function makeNewTodos(task) {
     const url = "http://127.0.0.1:8000/createTodoAPI/";
     console.log("url to send ", url);
-    saveRemoteNew(url, task, 'POST',true);
+    saveRemoteNew(url, task, 'POST', true);
 }
+
+
 
 async function registerUser(userData) {
 
     const url = "http://127.0.0.1:8000/registerAPI/";
-    let data = saveRemoteNew(url, userData, 'POST',false);
+    let data = saveRemoteNew(url, userData, 'POST', false);
     console.log(data);
 }
 
 async function getUserbyId(id) {
 
-    const url = "http://127.0.0.1:8000/user/"+id+"/";
+    const url = "http://127.0.0.1:8000/user/" + id + "/";
     let data = await loadRemoteNew(url);
     console.log(data);
-    return data    
+    return data
 }
 
 
-function setToken(token) { 
+function setToken(token) {
     localStorage.setItem('token', token);
 }
 
-function getidFromLocalStorage(){
-    let  data = localStorage.getItem('id')
-    id = JSON.parse(data);    
+function getidFromLocalStorage() {
+    let data = localStorage.getItem('id')
+    id = JSON.parse(data);
     return id;
-  }
+}
+
+async function loadRemoteTodos() {
+    const url = "http://127.0.0.1:8000/createTodoAPI/"
+    //debugger;
+    tasks = await loadRemoteNew(url);
+    console.log(tasks);
+   // debugger;
+    return tasks
+}
+
+
 
 async function loadRemoteNew(url) {
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", 'Token ' + localStorage.getItem('token'));  
-    let data = [];
+    myHeaders.append("Authorization", 'Token ' + localStorage.getItem('token'));
+    let data=[];
     const requestOptions = {
         method: 'GET',
         headers: myHeaders,
@@ -204,8 +224,11 @@ async function loadRemoteNew(url) {
     };
     try {
         let resp = await fetch(url, requestOptions);
+        //console.log(resp);
         data = await resp.json();
-        
+        // console.log("pulled data");
+        // console.log(data);
+
     } catch (e) {
         console.error(e);
     }
@@ -218,7 +241,7 @@ async function saveRemoteNew(url, dataUpload, method, bool) {
     console.log(dataUpload);
     myHeaders.append("Content-Type", "application/json");
     if (bool) {
-        myHeaders.append("Authorization", 'Token ' + localStorage.getItem('token')) ;
+        myHeaders.append("Authorization", 'Token ' + localStorage.getItem('token'));
     }
     let data = [];
     const requestOptions = {
@@ -229,9 +252,7 @@ async function saveRemoteNew(url, dataUpload, method, bool) {
     };
     try {
         let resp = await fetch(url, requestOptions);
-        console.log(resp);
         data = await resp.json();
-        console.log(data);
     } catch (e) {
         console.error(e);
     }
