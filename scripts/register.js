@@ -392,15 +392,43 @@ async function getItem(key) {
     }
 }
 
+// async function onSubmit(event) {
+//     event.preventDefault();
+//     let formData = new FormData(event.target);
+//     let response = await action(formData);
+//     if (response.ok) {
+//         showInfoBox();
+//     } else {
+//         alert('E-Mail was not sent!');
+//     }
+
+// }
 async function onSubmit(event) {
     event.preventDefault();
-    let formData = new FormData(event.target);
-    let response = await action(formData);
-    if (response.ok) {
-        showInfoBox();
-    } else {
-        alert('E-Mail was not sent!');
-    }
+    let mail= document.getElementById('emailLogin').value;
+    let url = 'http://127.0.0.1:8000/password_reset/?email='+mail;
+
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    const requestInit = {
+        method: 'POST', 
+        headers: myHeaders,
+        body : JSON.stringify({"email":mail})    
+    };
+    fetch(url,requestInit)
+    .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then(data => {
+     
+      })
+      .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+      });
 
 }
 
@@ -439,24 +467,24 @@ function getEmailUrl() {
     return email;
 }
 
-function resetPassword(){
-    fetch('http://127.0.0.1:8000/reset_password/')
-    .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.text();
-      })
-      .then(data => {
-        //  Fügen Sie den HTML-Inhalt in das Element mit der ID "passwordResetPage" ein
-         document.getElementById('login-container').innerHTML = data;
-    //   const newWindow = window.open();
-    //   newWindow.document.write(data);
-      })
-      .catch(error => {
-        console.error('There was a problem with the fetch operation:', error);
-      });
-}
+// function resetPassword(){
+//     fetch('http://127.0.0.1:8000/reset_password/')
+//     .then(response => {
+//         if (!response.ok) {
+//           throw new Error('Network response was not ok');
+//         }
+//         return response.text();
+//       })
+//       .then(data => {
+//         //  Fügen Sie den HTML-Inhalt in das Element mit der ID "passwordResetPage" ein
+//          document.getElementById('login-container').innerHTML = data;
+//     //   const newWindow = window.open();
+//     //   newWindow.document.write(data);
+//       })
+//       .catch(error => {
+//         console.error('There was a problem with the fetch operation:', error);
+//       });
+// }
 
 
 

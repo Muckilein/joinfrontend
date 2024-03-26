@@ -16,7 +16,7 @@ async function loadUsersRegister() {
 
     try {
         let item = await getItem('users') || [];
-        let data = item.data.value;      
+        let data = item.data.value;
         let u = JSON.parse(data) || [];
         console.log(users)
         return u;
@@ -40,7 +40,7 @@ function getEmailUrlPrameter() {
 function checkPassword() {
     let p1 = document.getElementById('pw1').value;
     let p2 = document.getElementById('pw2').value;
-    newPW = p1;    
+    newPW = p1;
     return p1 == p2;
 }
 
@@ -49,25 +49,80 @@ function checkPassword() {
  * 
  * @param {event} event 
  */
-function newPassword(event) {    
+async function newPassword(event) {    //change 
     event.preventDefault();
-    if (checkPassword()) {
-        users.forEach(u => {
-            if (u['email'] == email) {
-                u['password']=newPW;
-                setItem('users',users);
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    let valid = await validToken(token);
+    console.log('valid');
+    console.log(valid['status']);
+    let url = urlParams.get('path');
+    let pw1 = document.getElementById('pw1').value;
+    let pw2 = document.getElementById('pw2').value;
+    console.log(pw1 + " " + url + " " + token);
+    if (pw1 == pw2 && valid['status']=='OK') {
+        if (token != null) {
+            // let url = 'http://127.0.0.1:8000/password_reset/confirm';
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+            let data = {
+                "password": pw1,
+                "token": token
+            };
+            console.log(data);
+            const requestOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                redirect: 'follow',
+                body: JSON.stringify(data)
+            };
+            try {
+                let resp = await fetch(url, requestOptions);
+                data = await resp.json();
+                console.log(data);
+                setTimeout(() => { window.location.href = "http://127.0.0.1:5500/index.html" }, 2000)
+
+            } catch (e) {
+                console.error(e);
             }
-        });
-        window.location.href="https://julia-wessolleck.developerakademie.net/Join/index.html"
+        }
     }
-    
-   
-
 }
-// function onSubmit(event) {
-//     event.preventDefault(); 
 
-// }
+    async function validToken(token) {    //change 
+    
+    let url = 'http://127.0.0.1:8000/password_reset/validate_token/'
+   
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+            let data = {                
+                "token": token
+            };
+            console.log(data);
+            const requestOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                redirect: 'follow',
+                body : JSON.stringify(data)
+            };
+            try {
+                let resp = await fetch(url, requestOptions);               
+                data = await resp.json();                   
+               
+
+            } catch (e) {
+                console.error(e);
+            }
+            return data;
+        }
+      
+
+
+
+
+
+
+
 
 
 
