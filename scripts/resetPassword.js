@@ -3,6 +3,8 @@ let users;
 let newPW;
 
 
+
+
 async function onPageLoad() {
     email = getEmailUrlPrameter();
     //  users = getUsers();
@@ -54,22 +56,17 @@ async function newPassword(event) {    //change
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
     let valid = await validToken(token);
-    console.log('valid');
-    console.log(valid['status']);
     let url = urlParams.get('path');
     let pw1 = document.getElementById('pw1').value;
     let pw2 = document.getElementById('pw2').value;
-    console.log(pw1 + " " + url + " " + token);
-    if (pw1 == pw2 && valid['status']=='OK') {
+    if (pw1 == pw2 && valid['status'] == 'OK') {
         if (token != null) {
-            // let url = 'http://127.0.0.1:8000/password_reset/confirm';
             const myHeaders = new Headers();
             myHeaders.append("Content-Type", "application/json");
             let data = {
                 "password": pw1,
                 "token": token
             };
-            console.log(data);
             const requestOptions = {
                 method: 'POST',
                 headers: myHeaders,
@@ -79,8 +76,8 @@ async function newPassword(event) {    //change
             try {
                 let resp = await fetch(url, requestOptions);
                 data = await resp.json();
-                console.log(data);
-                setTimeout(() => { window.location.href = "http://127.0.0.1:5500/index.html" }, 2000)
+                //setTimeout(() => { window.location.href = "http://127.0.0.1:5500/index.html" }, 2000)
+                setTimeout(() => { window.location.href = "http://julia-wessolleck.developerakademie.net/Join-frontend/index.html" }, 2000)
 
             } catch (e) {
                 console.error(e);
@@ -89,41 +86,29 @@ async function newPassword(event) {    //change
     }
 }
 
-    async function validToken(token) {    //change 
-    
-    let url = 'http://127.0.0.1:8000/password_reset/validate_token/'
-   
-            const myHeaders = new Headers();
-            myHeaders.append("Content-Type", "application/json");
-            let data = {                
-                "token": token
-            };
-            console.log(data);
-            const requestOptions = {
-                method: 'POST',
-                headers: myHeaders,
-                redirect: 'follow',
-                body : JSON.stringify(data)
-            };
-            try {
-                let resp = await fetch(url, requestOptions);               
-                data = await resp.json();                   
-               
+async function validToken(token) {    //change 
 
-            } catch (e) {
-                console.error(e);
-            }
-            return data;
-        }
-      
+    let url = pathBackend+'password_reset/validate_token/'
 
-
-
-
-
-
-
-
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    let data = {
+        "token": token
+    };
+    const requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        redirect: 'follow',
+        body: JSON.stringify(data)
+    };
+    try {
+        let resp = await fetch(url, requestOptions);
+        data = await resp.json();
+    } catch (e) {
+        console.error(e);
+    }
+    return data;
+}
 
 
 function showInfoBox() {

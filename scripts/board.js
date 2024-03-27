@@ -31,8 +31,7 @@ async function loadBasics() {
 
 }
 
-function changeAssignments() {
-    console.log('call changeAssignments');
+function changeAssignments() {    
     tasks.forEach((t) => {
         makeAssignmentList(t)
     });
@@ -286,36 +285,28 @@ function addSubtaskToTasks() {
         i++;
     });
 }
-function addSubtaskToTasksOLD() { //--------------------------------------------------------------------------delete------------------
-    let checkbox = document.getElementById("subtasksEdit");
-    let checkboxes = checkbox.querySelectorAll('[subEdit]')
-    //tasks[editIndex]['maxSubs']= checkboxes.length;
-    let subs = tasks[editIndex]['subtask'];
-    checkboxes.forEach(element => {
-        if (subs.indexOf(element.name) < 0) {
-            tasks[editIndex]['subtask'].push(element.name);
 
-            tasks[editIndex]['checked'].push(false);
-        }
-    });
-    let i = 0;
-    checkboxes.forEach(element => {
-        if (element.checked) {
-            tasks[editIndex]['checked'][i] = true;
-        } else { tasks[editIndex]['checked'][i] = false; }
-        i++;
-    });
+function subExist(subs,title){
+ bool = false;
+ subs.forEach((s)=>{
+  if(s['title']==title)
+  {
+    bool = true;
+  }
+ });
+ return bool;
 }
 
 /**
  * adds the subtask from the input to the selection
  */
 function addSubtaskEdit() {
-    let sub = document.getElementById('inputSub').value;
-    if (sub != "") {
+    let subTitle = document.getElementById('inputSub').value;
+    let subs = tasks[editIndex]['subtask'];
+    if (subTitle != "" && !subExist(subs,subTitle)) {
         let newSub = {
             "id": 'null',
-            "title": sub,
+            "title": subTitle,
             "checked": true
         };
         subsEdit.push(newSub);
@@ -333,8 +324,7 @@ function addSubEdit(sub) {
     let i = 0;
     let subs = sub;
     t = "";
-    subs.forEach(element => {
-        console.log(element);
+    subs.forEach(element => {     
 
         t += ` <div class="selectGapArrow" onclick="stoppen(event)">
         <label for="subsEdit${i}">${element['title']}</label>

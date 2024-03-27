@@ -26,9 +26,7 @@ async function loadBasicsAddTask() {
     //await loadRemote();
     colorsCategory = await loadRemoteColor();
     await loadRemote();
-    addContact(dummyContacts[0], '');
-    console.log(dummyContacts)
-    //addContact(dummyContacts[1], '');
+    addContact(dummyContacts[0], '');   
 }
 
 /** 
@@ -275,7 +273,7 @@ async function handleCreateTaskCorrectForm() {
  * @returns return a new task
  */
 function giveTask(st, checked) {
-    console.log(chosenCategory);
+   
     let task = {
         "title": `${document.getElementById("title").value}`,
         "description": `${document.getElementById("description").value}`,
@@ -289,8 +287,7 @@ function giveTask(st, checked) {
         "maxSubs": '' + st.length,
         "checked": checked,
     }
-    console.log('categoryColor',categoryColor);
-    console.log('new made task',task);
+    
     return task;
 }
 
@@ -364,7 +361,6 @@ function isAllreadyInSelection(name, add) {
 function addAssignment(add) {
     let email = document.getElementById('mailContact' + add).value;
     let b = false;
-    console.log(users);
     users.forEach(element => {
         if (element['email'] == email) {
             //dummyContact = element;

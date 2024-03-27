@@ -113,24 +113,19 @@ async function addNameToHref() {
  * secondname. After that it will create the short-Icon. Max Mustermann -> MM . After that it will push everything
  * in the current place from the contacts-array and save so the changes.
  */
-async function saveContactChanges(i) { // --------delete----------------
+async function saveContactChanges(i) { 
 
   //let name = document.getElementById('changeName').value;
   let email = document.getElementById('changeEmail').value;
   let regUser = filterFromUser(email);
   let phone = document.getElementById('changePhone').value;
   id = await getidFromLocalStorage();
-  // let firstName = name.trim().split(' ')[0]; // Erster Name
-  // let lastName = name.trim().split(' ')[1]; // Nachname
-  // let short = (firstName ? firstName.charAt(0) : '') + (lastName ? lastName.charAt(0) : '');
+ 
   if (regUser) {
     contacts[i].username = regUser.username;
     contacts[i].email = email;
     contacts[i].phone = phone;
-    contacts[i].short = regUser.short;
-
-    //await setItem('contacts', JSON.stringify(contacts));
-    //let con= await makeContact(id, contact);
+    contacts[i].short = regUser.short;   
     let newContact = document.getElementById('newContact');
     newContact.classList.add('d-none');
     showContactDetails(i);
@@ -152,10 +147,10 @@ function filterFromUser(email) {
 /**
  * This will delete the selected contact from the array contacts.
  */
-async function deleteContact(i) {
-  if (!contacts[i]['reg']) {
+async function deleteContact(i) { //---old  delete
+    
+    await deleteThisContact(contacts[i]);
     contacts.splice(i, 1);
-    await setItem('contacts', JSON.stringify(contacts));
     let newContact = document.getElementById('newContact');
     newContact.classList.add('d-none');
     document.getElementById('resetName').innerHTML = "";
@@ -168,9 +163,7 @@ async function deleteContact(i) {
     document.getElementById('responsiveDelete').classList.add('d-none');
     document.getElementById('responsiveEdit').classList.add('d-none');
     document.getElementById('backArrowResponsive').classList.add('d-none');
-  } else {
-    console.log("Not allowed to delete this.")
-  }
+  
 }
 
 /**
@@ -200,10 +193,8 @@ async function newContact() {
       "user": id
     };
 
-    let contactData = await makeContact(id, contact);
-    console.log(contactData);
-    contacts.push(contactData);
-    console.log(contacts);
+    let contactData = await makeContact(id, contact);  
+    contacts.push(contactData);   
     let newContact = document.getElementById('newContact');
     newContact.classList.add('d-none');
     renderContacts();
@@ -218,8 +209,7 @@ async function newContact() {
 /**
  * Show the current clicked contact and give details about it.
  */
-function showContactDetails(i) {
-  console.log('callshow');
+function showContactDetails(i) { 
   actualContact = i;
   let container = document.getElementById('contactDetails');
   let contact = contacts[i];

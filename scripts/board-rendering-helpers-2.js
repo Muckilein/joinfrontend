@@ -34,8 +34,9 @@ async function addNameToHref() {
  * @param {boolean} full    fullstrean or not
  */
 async function deleteTask(index, full) {
+    id = tasks[index]['id']
     tasks.splice(index, 1);
-    deleteTodo(index);
+    deleteTodo(id);
     if (full) {
         closeTask();
     } else {

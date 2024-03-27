@@ -158,9 +158,7 @@ function resizeListener() {
  * @param {string} id       is of the form element that is responsible for the form validation and submits the editTask
  */
 function editTask(id) {
-    let index = editIndex;
-    console.log("task",index);
-    console.log(tasks[index]);
+    let index = editIndex;   
     //in add-task.js checks if at least one checkbox with attribut checkEdit is clicked
     checkboxValidation(id, '[checkEdit]');
     // if formvalidation was succesful
@@ -182,7 +180,7 @@ function editTask(id) {
  */
 
 function editTaskCorrectForm(index,id){
-    console.log("Call Edit Correct Form");
+    
     if (!expandSub) { openSubtasks(); }
     addSubtaskToTasks();
     //reads the required informations from all kind of inputs and set the information to the task
@@ -190,10 +188,7 @@ function editTaskCorrectForm(index,id){
     tasks[index]['description'] = document.getElementById('descriptionEdit').value;
     tasks[index]['prio'] = '' + prio;
     tasks[index]['assignments'] = getAssignmentsEdit(id);
-    tasks[index]['date'] = document.getElementById('dateEdit').value;
-    console.log(tasks[index]['subtask']);
-    console.log(tasks[index]['assignments']);
-    //setTask('tasks', tasks);
+    tasks[index]['date'] = document.getElementById('dateEdit').value;       
     setRemoteTodos(tasks[index]);
     addedEdit = false;
     document.getElementById('taskEdit').classList.add('d-none');

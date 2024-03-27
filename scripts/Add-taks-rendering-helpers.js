@@ -54,8 +54,8 @@ async function loadContacts() {
     id = getidFromLocalStorage();
     contacts2 = await getContactBE(id);
     users = await getUsers();
-   
-    user = getActivUser(users,id);
+
+    user = getActivUser(users, id);
     let i = 0;
     contacts2.forEach(element => { //colors[i % 9]
         let a = { "username": element['username'], "email": element['email'], "id": element['id'], "iconColor": element['iconColor'], "short": element['short'] };
@@ -67,16 +67,15 @@ async function loadContacts() {
 
 
 
-function getActivUser (users,id){
-  //id = getidFromLocalStorage(); 
-  let us=null;
-  users.forEach((u)=>{    
-    if (u.id==id)
-    {
-        us = u
-    }
-  });
-  return us;
+function getActivUser(users, id) {
+    //id = getidFromLocalStorage(); 
+    let us = null;
+    users.forEach((u) => {
+        if (u.id == id) {
+            us = u
+        }
+    });
+    return us;
 }
 
 
@@ -114,7 +113,7 @@ function getJ() {
 
 
 async function save() {
-    console.log("call save");
+
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     myHeaders.append("Authorization", 'Token ' + "826a8ea96595f1ae6f14e374ebc715d27dc2600f");
@@ -128,11 +127,6 @@ async function save() {
     try {
         let resp = await fetch("http://127.0.0.1:8000/createTodoAPI/4/", requestOptions);
         let json = await resp.json();
-        console.log(resp);
-        console.log(json);
-
-        // TODO: Redirect
-        //this.router.navigateByUrl('/todos');
     } catch (e) {
         // Show error message
         console.error(e);
@@ -278,7 +272,7 @@ function renderMemberAddTask(id, checkboxes) {
  */
 function setCategory(cat, event) {
     stoppen(event);
-    chosenCategory = colorsCategory[cat];  
+    chosenCategory = colorsCategory[cat];
     expandedCategory = false;
     let color = chosenCategory['iconColor'];
     let title = chosenCategory['title'];
@@ -357,13 +351,10 @@ async function newCategoryChoosen() {
 
     if (chosenCategory != "") {
         newCategory += `<div class="selectionChoice" onclick="setCategory('${chosenCategory}',event)" value="${chosenCategory}">${chosenCategory}<div class="circle"  style="background-color:${categoryColor} "></div></div>`;
-        // let elem = { "name": '' + chosenCategory, "color": '' + categoryColor };
-        // colorsCategory.push(elem);
         expandedCategory = false;
-        //setTask('category', colorsCategory);// delete later
         let c = { "title": chosenCategory, "color": categoryColor }
         let cat = await makeCategory(c);
-        colorsCategory.push(c);       
+        colorsCategory.push(c);
         showCategory(categoryColor);
         document.getElementById('selectionCategory').innerHTML += newCategory;
         document.getElementById('colorChoice').classList.add('d-none');
@@ -432,11 +423,10 @@ function calculatePrioAddTask(priority) {
  */
 function showCategory() {
     let cat = `${categoryTitle} ${newCategoryField}`;
-    console.log("call showCategory");
-    console.log(colorsCategory);
+
     // checkboxes = form.querySelectorAll('input[type=checkbox]');
     if (!expandedCategory) {
-        console.log(colorsCategory);
+
         index = 0;
         colorsCategory.forEach(c => {
             if (c['title'] != undefined) {
@@ -488,7 +478,7 @@ function isChecked() {
  */
 function checkValidity() {
     const errorMessage = !isChecked() ? 'At least one checkbox must be selected.' : '';
-    console.log(firstCheckbox);
+
     firstCheckbox.setCustomValidity(errorMessage);
     firstCheckbox.reportValidity(); // ist wichtig, dass es angezeigt wird
     setTimeout(clearfirst, 1500);
@@ -536,7 +526,8 @@ function setSubtasks() {
     subtasks = [];
     subTasks.forEach(element => {
         if (element.checked) {
-            subtasks.push(element.name);
+            //subtasks.push(element.name);
+            subtasks.push({ "id": "null", "title": element.name, "checked": false })
         }
     });
     return subtasks;

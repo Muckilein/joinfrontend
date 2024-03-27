@@ -12,10 +12,10 @@ let colorsIcon = ['#FF7A00', '#9327FF', '#29ABE2', '#FC71FF', '#02CF2F', '#AF161
  */
 async function initIndex() {
 
-    await loadUsersRegister();
+
     let dat = loadData();
     let mail = dat[0];
-    let pw = dat[1];    
+    let pw = dat[1];
     if (mail != "") {
         document.getElementById('checkbox').checked = true;
         document.getElementById('emailLogin').value = mail;
@@ -23,18 +23,7 @@ async function initIndex() {
     }
 }
 
-/**
- * This function loads the user data from a remote storage and handles potential loading errors.
- */
-async function loadUsersRegister() {
 
-    try {
-        users = JSON.parse(await getItem('users')) || [];        
-
-    } catch (e) {
-        console.error('Loading error:', e);
-    }
-}
 
 /**
  * This function handles the registration process by checking if the email already exists, adding the new user, resetting the form, and displaying a success message.
@@ -44,7 +33,7 @@ async function register() {
     registerUser(newUser);
     resetForm();
     displayRegistrationSuccess();
-  
+
 }
 
 
@@ -61,21 +50,21 @@ function getNewUserFromInputs() {
     let split = nameInput.value.split(' ');
     split.push(" ");
     let nameKorrekt = "";
-    split.forEach((s)=>{
-        nameKorrekt+= s;
+    split.forEach((s) => {
+        nameKorrekt += s;
     });
     return {
         "username": nameKorrekt,
         "email": emailInput.value,
         "password": passwordInput.value,
         "password2": passwordInput.value,
-        "first_name":split[0],
-        "last_name":split[1],
-       // "iconColor":colorsIcon[Math.random()*9],
-        "iconColor":colorsIcon[5],
-        "short":split[0][0]+split[1][0],
-        "phone":"Phone Number"
-        };
+        "first_name": split[0],
+        "last_name": split[1],
+        // "iconColor":colorsIcon[Math.random()*9],
+        "iconColor": colorsIcon[5],
+        "short": split[0][0] + split[1][0],
+        "phone": "Phone Number"
+    };
 }
 
 function displayEmailExistsMessage() {
@@ -89,8 +78,8 @@ function displayEmailExistsMessage() {
 function addUser(user) {
     const registerBtn = document.getElementById('registerBtn');
     registerBtn.disabled = true;
- 
-    users.push(user);   
+
+    users.push(user);
     //setItem('users', JSON.stringify(users));
     setItem('users', users);
 }
@@ -134,31 +123,37 @@ function showInfoBox() {
 
 // Login // 
 
-/**
- * This function enables guest access to the application by populating the login fields with pre-defined guest email and password and redirecting the user to the summary page.
- */
-function openGuestLogin() {
-    const emailField = document.getElementById("emailLogin");
-    const passwordField = document.getElementById("passwordLogin");
-    const loginError = document.getElementById('login-error');
-    const emailValue = "testguest@test.de";
-    const passwordValue = "123";
-
-    emailField.value = emailValue;
-    passwordField.value = passwordValue;
-    loginError.style.display = 'none';
-    setTimeout(function () {
-        emailField.value = "";
-        passwordField.value = "";
-        loginError.style.display = 'none';
 
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const userName = urlParams.get('name');
+async function registerGuest() {
+    let url = pathBackend + 'guest/';
+    let resp = await fetch(url);
+    data = await resp.json();
+    console.log(data);
+    if (data == 'NO') {
+        guest = {
+            "username": "Guest",
+            "email": "Guest@mail.de",
+            "password": "666aaaaaaa",
+            "password2": "666aaaaaaa",
+            "first_name": "User",
+            "last_name": "Guest",
+            // "iconColor":colorsIcon[Math.random()*9],
+            "iconColor": colorsIcon[5],
+            "short": "UG",
+            "phone": "0000000000"
+        };
+        await registerUser(guest);
+        setTimeout(() => { login("Guest@mail.de", "666aaaaaaa"); }, 2000);
+    } else {
+        await login("Guest@mail.de", "666aaaaaaa");
+    }
+}
 
 
-        window.location.href = `./html/summary.html?name=${userName || 'Guest'}`;
-    },);
+async function openGuestLogin() {
+    await registerGuest();
+
 }
 
 /**
@@ -168,50 +163,52 @@ function openGuestLogin() {
  * @param {Event} event - The event object from the login form submission.
  */
 async function loginUser(event) {
-    console.log("call Login");
     event.preventDefault();
     const emailInput = document.getElementById('emailLogin');
-    const passwordInput = document.getElementById('passwordLogin'); 
+    const passwordInput = document.getElementById('passwordLogin');
     let email = emailInput.value;
-    let password = passwordInput.value;        
+    let password = passwordInput.value;
+    await login(email, password);
 
+}
+
+async function login(email, password) {
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
 
     const raw = JSON.stringify({
-      "username": email,
-      "password": password
+        "username": email,
+        "password": password
     });
 
     const requestOptions = {
-      method: 'POST',
-      headers: myHeaders,
-      body: raw,
-      redirect: 'follow'
+        method: 'POST',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow'
     };
     try {
-      let resp = await fetch("http://127.0.0.1:8000/login/", requestOptions);
-      let json = await resp.json();
-      console.log(json);
-      setToken( json.token);
-      id =json['user_id'];
-      if(id==undefined){
+        let resp = await fetch(pathBackend + "login/", requestOptions);
+        let json = await resp.json();
+        setToken(json.token);
+        id = json['user_id'];
+        if (id == undefined) {
 
-      }else{
-        localStorage.setItem('id',id); 
-        let user = await getUserbyId(id);    
-        localStorage.setItem('username',user.username);    
-               // TODO: Redirect
-        window.location.href = `./html/summary.html?name=${user.username}&id=${id}`;   
-        //window.location.href = `./html/board.html?name=${user.username}&id=${id}`;  
-      }
-   
-    } catch(e){
-      // Show error message    
-      console.error(e);
-      window.location.href = `./html/index.html`;
+        } else {
+            localStorage.setItem('id', id);
+            let user = await getUserbyId(id);
+            localStorage.setItem('username', user.username);
+            // TODO: Redirect
+            //window.location.href = `./html/summary.html?name=${user.username}&id=${id}`;   
+            window.location.href = `html/summary.html?name=${user.username}&id=${id}`;
+
+        }
+
+    } catch (e) {
+        // Show error message    
+        console.error(e);
+        window.location.href = `/html/index.html`;
     }
-   // setDataToStorage(user,check,loginError);       
 }
 
 /**
@@ -221,7 +218,7 @@ async function loginUser(event) {
  * @param {Checkbox} check   Checkbox "remember me"
  * @param {Object} loginError 
  */
-function setDataToStorage(user,check,loginError){
+function setDataToStorage(user, check, loginError) {
     if (user) {
         if (check.checked) {
             saveMe(user.email, user.password);
@@ -353,20 +350,20 @@ window.onload = function () {
  * @returns {Promise<any>} - A Promise that resolves to the response data from the remote storage API.
  * @throws {Error} - If there is an error while making the request or processing the response.
  */
-async function setItem(key, value) {
-    const payload = { key, value, token: STORAGE_TOKEN };
-    try {
-        const response = await fetch('https://remote-storage.developerakademie.org/item', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Request error:', error);
-        throw error;
-    }
-}
+// async function setItem(key, value) {      //delete
+//     const payload = { key, value, token: STORAGE_TOKEN };
+//     try {
+//         const response = await fetch('https://remote-storage.developerakademie.org/item', {
+//             method: 'POST',
+//             body: JSON.stringify(payload)
+//         });
+//         const data = await response.json();
+//         return data;
+//     } catch (error) {
+//         console.error('Request error:', error);
+//         throw error;
+//     }
+// }
 
 /**
  * Retrieves the value associated with the specified key from the remote storage using the provided token.
@@ -376,59 +373,49 @@ async function setItem(key, value) {
  * @returns {Promise<any>} - A Promise that resolves to the value associated with the specified key.
  * @throws {Error} - If there is an error while making the request, processing the response, or if the key is not found.
  */
-async function getItem(key) {
-    const url = `https://remote-storage.developerakademie.org/item?key=${key}&token=${STORAGE_TOKEN}`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.data) {
-            return data.data.value;
-        } else {
-            throw new Error(`Could not find data with key "${key}".`);
-        }
-    } catch (error) {
-        console.error('Request error:', error);
-        throw error;
-    }
-}
-
-// async function onSubmit(event) {
-//     event.preventDefault();
-//     let formData = new FormData(event.target);
-//     let response = await action(formData);
-//     if (response.ok) {
-//         showInfoBox();
-//     } else {
-//         alert('E-Mail was not sent!');
+// async function getItem(key) { //delete
+//     const url = `https://remote-storage.developerakademie.org/item?key=${key}&token=${STORAGE_TOKEN}`;
+//     try {
+//         const response = await fetch(url);
+//         const data = await response.json();
+//         if (data.data) {
+//             return data.data.value;
+//         } else {
+//             throw new Error(`Could not find data with key "${key}".`);
+//         }
+//     } catch (error) {
+//         console.error('Request error:', error);
+//         throw error;
 //     }
-
 // }
-async function onSubmit(event) {
+
+
+async function resetPassword(event) {
     event.preventDefault();
-    let mail= document.getElementById('emailLogin').value;
-    let url = 'http://127.0.0.1:8000/password_reset/?email='+mail;
+    let mail = document.getElementById('emailLogin').value;
+    let url = path + 'password_reset/?email=' + mail;
 
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
 
     const requestInit = {
-        method: 'POST', 
+        method: 'POST',
         headers: myHeaders,
-        body : JSON.stringify({"email":mail})    
+        body: JSON.stringify({ "email": mail })
     };
-    fetch(url,requestInit)
-    .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.text();
-      })
-      .then(data => {
-     
-      })
-      .catch(error => {
-        console.error('There was a problem with the fetch operation:', error);
-      });
+    fetch(url, requestInit)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(data => {
+
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
 
 }
 
@@ -449,16 +436,6 @@ async function onPageLoad() {
 }
 
 
-/**
- * Retrieves the user object for password reset based on the email.
- * 
- * @returns {Object|null} - The user object for password reset, or null if not found.
- */
-async function getPasswordResetUser() { //---------------delete----------------------------
-    await loadUsersReset();
-    let user = users.find(u => u.email == email);
-    return user;
-}
 
 function getEmailUrl() {
     const queryString = window.location.search;
@@ -467,24 +444,7 @@ function getEmailUrl() {
     return email;
 }
 
-// function resetPassword(){
-//     fetch('http://127.0.0.1:8000/reset_password/')
-//     .then(response => {
-//         if (!response.ok) {
-//           throw new Error('Network response was not ok');
-//         }
-//         return response.text();
-//       })
-//       .then(data => {
-//         //  Fügen Sie den HTML-Inhalt in das Element mit der ID "passwordResetPage" ein
-//          document.getElementById('login-container').innerHTML = data;
-//     //   const newWindow = window.open();
-//     //   newWindow.document.write(data);
-//       })
-//       .catch(error => {
-//         console.error('There was a problem with the fetch operation:', error);
-//       });
-// }
+
 
 
 

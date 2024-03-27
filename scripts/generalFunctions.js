@@ -8,6 +8,7 @@ let p;
 let contacts;
 let generatedLetters = [];
 let colorsCategory = []
+let pathBackend = "http://127.0.0.1:8000/";
 
 /**
  * load all external html files with the attribut w3-include-html
@@ -42,77 +43,10 @@ function setNameToHrefs(userNameAddTask, id) {
     document.getElementById('menu_help').href = `help.html?name=${userNameAddTask}` + other;
 }
 
-/**
- * Stores a key-value pair in the remote storage using the provided token.
- * @async
- * @param {string} key - The key to be stored in the remote storage.
- * @param {any} value - The value to be associated with the specified key.
- * @returns {Promise<any>} - A Promise that contains the response data from the remote storage API.
- * @throws {Error} - If there is an error while making the request or processing the response.
- */
-async function setItem(key, value) {
-    const payload = { key, value, token: STORAGE_TOKEN };
-    try {
-        const response = await fetch(STORAGE_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Request error:', error);
-        throw error;
-    }
-}
-
-/**
- * Retrieves the value associated with the specified key from the remote storage using the provided token.
- * @async
- * @param {string} key - The key for which to retrieve the value from the remote storage.
- * @returns {Promise<any>} - A Promise that contains the value associated with the specified key.
- * @throws {Error} - If there is an error while making the request or processing the response, or if the key is not found.
- */
-async function getItem(key) {
-    const url = `${STORAGE_URL}?key=${key}&token=${STORAGE_TOKEN}`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Request error:', error);
-        throw error;
-    }
-}
-
-/**
- * This function saves the tasks on the remote storage.
- * @param {string} key - key e.g. 'tasks'
- * @param {string} value - the JSON Array, that should be saved
- * @returns - the promise
- */
-// async function setTask(key, value) {  //------------------------delete----------------
-//     let v = value
-//     if (value.length == 0) {
-//         v = '[]';
-//     }
-//     const payload = { key: key, value: v, token: STORAGE_TOKEN };
-//     return fetch(STORAGE_URL, { method: 'POST', body: JSON.stringify(payload) }).then(resp => resp.json());
-// }
-
 /*-----------------Summary---------------*/
-/**
- * This function used in loadRemote(). Fetches the object with the key from remote storage.
- * @param {string} key - key where the objects is stored remote.
- * @returns - returns the data.value
- */
-// async function getTasks(key) { //--------------delete---------------------------------------
-//     const url = `${STORAGE_URL}?key=${key}&token=${STORAGE_TOKEN}`;
-//     p = await fetch(url).then(resp => resp.json()).then(resp => resp.data.value);
-//     return p;
-// }
 
 async function logout() {
-    const url = "http://127.0.0.1:8000/logout/"
+    const url = pathBackend+"logout/"
     await loadRemoteNew(url);
     localStorage.removeItem('token');
     localStorage.removeItem('id');
@@ -122,27 +56,31 @@ async function logout() {
 
 
 async function getContactBE(id) {
-    const url = "http://127.0.0.1:8000/contacts/" + id + "/";
+    const url = pathBackend+"contacts/" + id + "/";
     let co = await loadRemoteNew(url)
     return co;
 }
 
 async function makeContact(id, contact) {
-    const url = "http://127.0.0.1:8000/contacts/" + id + "/";
+    const url = pathBackend+"contacts/" + id + "/";
     let co = saveRemoteNew(url, contact, 'POST', true);
+    return co;
+}
+async function deleteThisContact(contact) {
+    const url = pathBackend+"contacts/" + contact['id'] + "/";
+    let co = saveRemoteNew(url, {}, 'DELETE', true);
     return co;
 }
 
 async function getUsers() {
-    const url = "http://127.0.0.1:8000/users/";
+    const url = pathBackend+"users/";
     let co = await loadRemoteNew(url)
     return co;
 }
 
 async function loadRemoteColor() {
-    const url = "http://127.0.0.1:8000/categoryAPI/"
+    const url = pathBackend+"categoryAPI/"
     cat = await loadRemoteNew(url)
-    console.log('loadremotecolors', cat);
     return cat;
 }
 
@@ -152,24 +90,21 @@ async function loadRemoteColor() {
  */
 async function setRemoteTodos(task) {
     let id = task['id'];
-    const url = "http://127.0.0.1:8000/createTodoAPI/" + id + "/";
-    console.log("url to send ", url);
+    const url = pathBackend+"createTodoAPI/" + id + "/";
     saveRemoteNew(url, task, 'PUT', true);
 }
 
-async function deleteTodo(id) {   
-    const url = "http://127.0.0.1:8000/createTodoAPI/" + id + "/";   
+async function deleteTodo(id) {
+    const url = pathBackend+"createTodoAPI/" + id + "/";
     saveRemoteNew(url, {}, 'DELETE', true);
 }
 
 async function makeCategory(newCat) {
-    const url = "http://127.0.0.1:8000/categoryAPI/";
-    console.log("url to send ", url);
+    const url = pathBackend+"categoryAPI/";
     saveRemoteNew(url, newCat, 'POST', true);
 }
 async function makeNewTodos(task) {
-    const url = "http://127.0.0.1:8000/createTodoAPI/";
-    console.log("url to send ", url);
+    const url = pathBackend+"createTodoAPI/";
     saveRemoteNew(url, task, 'POST', true);
 }
 
@@ -177,16 +112,14 @@ async function makeNewTodos(task) {
 
 async function registerUser(userData) {
 
-    const url = "http://127.0.0.1:8000/registerAPI/";
+    const url = pathBackend+"registerAPI/";
     let data = saveRemoteNew(url, userData, 'POST', false);
-    console.log(data);
 }
 
 async function getUserbyId(id) {
 
-    const url = "http://127.0.0.1:8000/user/" + id + "/";
+    const url = pathBackend+"user/" + id + "/";
     let data = await loadRemoteNew(url);
-    console.log(data);
     return data
 }
 
@@ -202,11 +135,8 @@ function getidFromLocalStorage() {
 }
 
 async function loadRemoteTodos() {
-    const url = "http://127.0.0.1:8000/createTodoAPI/"
-    //debugger;
+    const url = pathBackend+"createTodoAPI/";
     tasks = await loadRemoteNew(url);
-    console.log(tasks);
-   // debugger;
     return tasks
 }
 
@@ -216,7 +146,7 @@ async function loadRemoteNew(url) {
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     myHeaders.append("Authorization", 'Token ' + localStorage.getItem('token'));
-    let data=[];
+    let data = [];
     const requestOptions = {
         method: 'GET',
         headers: myHeaders,
@@ -224,11 +154,7 @@ async function loadRemoteNew(url) {
     };
     try {
         let resp = await fetch(url, requestOptions);
-        //console.log(resp);
         data = await resp.json();
-        // console.log("pulled data");
-        // console.log(data);
-
     } catch (e) {
         console.error(e);
     }
@@ -236,9 +162,7 @@ async function loadRemoteNew(url) {
 }
 
 async function saveRemoteNew(url, dataUpload, method, bool) {
-    const myHeaders = new Headers();
-    console.log("dataupload");
-    console.log(dataUpload);
+    const myHeaders = new Headers();    
     myHeaders.append("Content-Type", "application/json");
     if (bool) {
         myHeaders.append("Authorization", 'Token ' + localStorage.getItem('token'));
