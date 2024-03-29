@@ -363,6 +363,42 @@ function showContactDetailsHtml(contact, i) {
                   <img  onclick="responsiveContactDetailsBackButton()" src="../img/backArrowResponsive.png" id="backArrowResponsive" class="responsiveBackArrowButton d-none">
               </div>`
 }
+/**
+ * Finds all Users that contain the given Sting in their email address
+ */
+function findUser(){
+  console.log("find user");
+  document.getElementById("userMail").classList.remove('d-none');
+  mail = document.getElementById("newEmail").value;
+  let mailLow = mail.toLowerCase();
+  let mailUser="";
+  let mailList=[]
+  if(mailLow==""){
+    document.getElementById("userMail").innerHTML="";
+    document.getElementById("userMail").classList.add('d-none');
+  }
+  else{
+  users.forEach((u)=>{
+    mailUser= u['email'].toLowerCase();
+    if(mailUser.includes(mailLow))
+    {
+      mailList.push(u['email']);
+    }
+  }); 
+  let mailWindow =document.getElementById("userMail");
+  mailWindow.innerHTML="";
+  mailList.forEach((m)=>{  
+  mailWindow.innerHTML+=`<div onclick="setMail('${m}')">${m}</div>`;
+  });
+}
+}
+
+function setMail(mail){ 
+  
+  document.getElementById("newEmail").value = mail;
+  document.getElementById("userMail").innerHTML = "";
+  document.getElementById("userMail").classList.add('d-none');
+}
 
 function newContactPopUpHtml() {
   return `
@@ -380,8 +416,14 @@ function newContactPopUpHtml() {
       <span class="mb-120">
       <div class="closeAddContactButton" onclick="closePopUpWindow()"><img class="" src="../img/cancelIcon.png"></div>
           <form id"formContact" onsubmit="newContact();return false;">
-              <div id="requestMailMessage"> Bitte geben sie die E-MailAdresse eines registrierten Nutzers ein</div>
-              <input type="email" id="newEmail" class="emailIcon" placeholder="Email" required>
+              <div>
+              <div id="requestMailMessage"> 
+                   Bitte geben sie die E-MailAdresse eines registrierten Nutzers ein
+              </div> 
+              <div class="mails " id="userMail"  style="cursor:pointer"></div>
+              </div>
+              
+              <input type="email" id="newEmail" class="emailIcon" placeholder="Email" required onkeyup="findUser()">
               <input type="number" id="newPhone" class="phoneIcon" placeholder="Phone">
           <div class="buttonContainer">
           <button class="cancelButton" onclick="closePopUpWindow()">Cancel <img class="" src="../img/cancelIcon.png"></button>

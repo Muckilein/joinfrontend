@@ -76,8 +76,8 @@ async function newPassword(event) {    //change
             try {
                 let resp = await fetch(url, requestOptions);
                 data = await resp.json();
-                //setTimeout(() => { window.location.href = "http://127.0.0.1:5500/index.html" }, 2000)
-                setTimeout(() => { window.location.href = "http://julia-wessolleck.developerakademie.net/Join-frontend/index.html" }, 2000)
+                setTimeout(() => { window.location.href = frontendPath+"index.html" }, 2000)
+                //setTimeout(() => { window.location.href = "http://julia-wessolleck.developerakademie.net/Join-frontend/index.html" }, 2000)
 
             } catch (e) {
                 console.error(e);

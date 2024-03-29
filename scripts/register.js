@@ -393,7 +393,7 @@ window.onload = function () {
 async function resetPassword(event) {
     event.preventDefault();
     let mail = document.getElementById('emailLogin').value;
-    let url = path + 'password_reset/?email=' + mail;
+    let url = pathBackend + 'password_reset/?email=' + mail;
 
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");

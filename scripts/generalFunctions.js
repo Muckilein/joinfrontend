@@ -9,6 +9,7 @@ let contacts;
 let generatedLetters = [];
 let colorsCategory = []
 let pathBackend = "http://127.0.0.1:8000/";
+let frontendPath = "http://127.0.0.1:5500/"
 
 /**
  * load all external html files with the attribut w3-include-html
@@ -51,7 +52,8 @@ async function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('id');
     localStorage.removeItem('username');
-    window.location.href = `/index.html`;
+   // window.location.href = `https://julia-wessolleck.developerakademie.net/Join-frontend/index.html`;
+    window.location.href = frontendPath+`index.html`;
 }
 
 

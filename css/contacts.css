@@ -108,6 +108,16 @@ body {
     color:red;
 }
 
+.mails{
+    width:350px;
+    background-color: white;
+    border-radius: 10px;
+    max-height: 100px;
+    font-size: small;
+    overflow-y: scroll;
+    padding: 0 5px 0 5px;
+}
+
 /* --- Content-ContactList --- */
 
 .contactList {
