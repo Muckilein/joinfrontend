@@ -125,7 +125,7 @@ async function save() {
         redirect: 'follow'
     };
     try {
-        let resp = await fetch("http://127.0.0.1:8000/createTodoAPI/4/", requestOptions);
+        let resp = await fetch(pathBackend+"createTodoAPI/4/", requestOptions);
         let json = await resp.json();
     } catch (e) {
         // Show error message
@@ -304,26 +304,6 @@ async function loadRemoteColorOld() {
     }
 }
 
-// async function loadRemoteColor() {
-//     const url = "http://127.0.0.1:8000/categoryAPI/"
-//     const myHeaders = new Headers();
-//     myHeaders.append("Content-Type", "application/json");
-//     myHeaders.append("Authorization", 'Token ' + "826a8ea96595f1ae6f14e374ebc715d27dc2600f");//+ localStorage.getItem('token'))        
-//     let cat = [];
-//     const requestOptions = {
-//         method: 'GET',
-//         headers: myHeaders,
-//         redirect: 'follow',
-//     };
-//     try {
-//         let resp = await fetch(url, requestOptions);
-//         cat = await resp.json();
-//         colorsCategory = cat;
-//     } catch (e) {
-//         console.error(e);
-//     }
-//     return cat;
-// }
 
 /**
  * Renders a new Category on the Category selection
