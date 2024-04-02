@@ -1,32 +1,18 @@
 
 
 
-/**
- * Reads the name of the logged in Person from the query parameter and saves it
- */
-function readQueryParameters() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const msg = urlParams.get('name');
-    const id = urlParams.get('id');
-    if (msg) {
-        userNameAddTask = msg;
-    }
-    setTimeout(() => {
-        setNameToHrefs(userNameAddTask, id);
-    }, 1000);
 
-}
 
 /**
  * Loads basic data lile User, Contacts, Categories
  */
 async function loadBasicsAddTask() {
     loadContacts();
-    await includeHTML();
-    //await loadRemote();
+    await includeHTML();  
     colorsCategory = await loadRemoteColor();
-    await loadRemote();
-    addContact(dummyContacts[0], '');   
+    await loadRemoteTodos();
+   // addContact(dummyContacts[0], '');
+    
 }
 
 /** 
@@ -37,9 +23,7 @@ Loads: the contacts, the external html FileSystem, and two contacts that are sho
 async function init() {
     expanded = false;
     addTask = true;
-    loadBasicsAddTask();
-    readQueryParameters();
-
+    loadBasicsAddTask(); 
 
     // Handles the rezising
     window.addEventListener("resize", resizeListenerAddTask);
@@ -49,9 +33,9 @@ async function init() {
         categoryTitle = document.getElementById('selectionCategory').innerHTML;
         // Sets the minDate
         document.getElementById('date').min = new Date().toLocaleDateString('fr-ca');
-       
+
     }, 500);
-   
+
 
 }
 
@@ -223,20 +207,12 @@ function setWhite() {
  */
 async function createTask() {
 
-    checkboxValidation('form', '[check]');
+    // checkboxValidation('form', '[check]');
     if (chosenCategory == "") {
         validationCategory();
     }
-    else {
-        if (checked) {
-            handleCreateTaskCorrectForm();
-        } else {
-            if (!expanded) {
-                showCheckboxes();
-                firstCheckbox.reportValidity();
-            }
-        }
-        checked = false;
+    else {      
+        handleCreateTaskCorrectForm();      
     }
 }
 
@@ -257,10 +233,7 @@ async function handleCreateTaskCorrectForm() {
 
     document.getElementById('prio' + prioOld).style.backgroundColor = 'white';
     tasks.push(task);
-    makeNewTodos(task);
-    //saves tasks remote
-    //setTask('tasks', tasks);
-    // handles what happend after the task was created      
+    makeNewTodos(task);      
     returnFromAddTask(true);
     if (addTask) { setTimeout(backBoard, 1500); }
 }
@@ -273,21 +246,20 @@ async function handleCreateTaskCorrectForm() {
  * @returns return a new task
  */
 function giveTask(st, checked) {
-   
+
     let task = {
         "title": `${document.getElementById("title").value}`,
         "description": `${document.getElementById("description").value}`,
-        "category": {"title":chosenCategory['title'],"color":chosenCategory['color']},
+        "category": { "title": chosenCategory['title'], "color": chosenCategory['color'] },
         "assignments": addedContacts,
         "date": `${document.getElementById("date").value}`,
         "prio": '' + prio,
         "subtask": st,
         "state": '' + state,
         "color": '' + chosenCategory['color'],
-        "maxSubs": '' + st.length,
-        "checked": checked,
+        "maxSubs": '' + st.length,       
     }
-    
+
     return task;
 }
 
@@ -361,12 +333,12 @@ function isAllreadyInSelection(name, add) {
 function addAssignment(add) {
     let email = document.getElementById('mailContact' + add).value;
     let b = false;
-    users.forEach(element => {
+    dummyContacts.forEach(element => {
         if (element['email'] == email) {
             //dummyContact = element;
-            if (!isAllreadyInSelection(element['username'], add)) {                              
+            if (!isAllreadyInSelection(element['username'], add)) {
                 addContact(element, add);
-                changeSelect(add);                             
+                changeSelect(add);
 
             } else {
                 document.getElementById('mailContact' + add).value = 'Schon zugewiesen';
@@ -410,8 +382,10 @@ function closeAllSelections(event) {
  * Blends in/out the selection with the assigment checkboxes
  */
 function showCheckboxes() {
+   // debugger;
     let checkbox = document.getElementById("assignmentChoices");
     checkboxes = document.getElementById('form').querySelectorAll('[check]');
+    console.log(checkboxes);
     // checkboxes = form.querySelectorAll('input[type=checkbox]');
     if (!expanded) {
         checkbox.classList.remove('d-none');

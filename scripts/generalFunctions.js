@@ -28,60 +28,50 @@ async function includeHTML() {
     }
 }
 
-/**
- * Adds the username to the href of the links.
- * 
- * @param {string} userNameAddTask  username
- */
-function setNameToHrefs(userNameAddTask, id) {
-    let other = `&id=${id}`;
-    document.getElementById('menu_board').href = `board.html?name=${userNameAddTask}` + other;
-    document.getElementById('menu_add-task').href = `add-task.html?name=${userNameAddTask}` + other;
-    document.getElementById('menu_contacts').href = `contacts.html?name=${userNameAddTask}` + other;
-    document.getElementById('menu_summary').href = `summary.html?name=${userNameAddTask}` + other;
-    document.getElementById('menu_legal-notice').href = `legal-notice.html?name=${userNameAddTask}` + other;
-    document.getElementById('helpId').href = `help.html?name=${userNameAddTask}` + other;
-    document.getElementById('menu_help').href = `help.html?name=${userNameAddTask}` + other;
-}
 
 /*-----------------Summary---------------*/
 
 async function logout() {
-    const url = pathBackend+"logout/"
+    const url = pathBackend + "logout/"
     await loadRemoteNew(url);
     localStorage.removeItem('token');
     localStorage.removeItem('id');
     localStorage.removeItem('username');
-   // window.location.href = `https://julia-wessolleck.developerakademie.net/Join-frontend/index.html`;
-    window.location.href = frontendPath+`index.html`;
+    // window.location.href = `https://julia-wessolleck.developerakademie.net/Join-frontend/index.html`;
+    window.location.href = frontendPath + `index.html`;
 }
 
 
 async function getContactBE(id) {
-    const url = pathBackend+"contacts/" + id + "/";
+    const url = pathBackend + "contacts/" + id + "/";
     let co = await loadRemoteNew(url)
     return co;
 }
 
 async function makeContact(id, contact) {
-    const url = pathBackend+"contacts/" + id + "/";
+    const url = pathBackend + "contacts/" + id + "/";
     let co = saveRemoteNew(url, contact, 'POST', true);
     return co;
 }
+async function saveContact(id, contact) {
+    const url = pathBackend + "contacts/" + id + "/";
+    let co = saveRemoteNew(url, contact, 'PUT', true);
+    return co;
+}
 async function deleteThisContact(contact) {
-    const url = pathBackend+"contacts/" + contact['id'] + "/";
+    const url = pathBackend + "contacts/" + contact['id'] + "/";
     let co = saveRemoteNew(url, {}, 'DELETE', true);
     return co;
 }
 
 async function getUsers() {
-    const url = pathBackend+"users/";
+    const url = pathBackend + "users/";
     let co = await loadRemoteNew(url)
     return co;
 }
 
 async function loadRemoteColor() {
-    const url = pathBackend+"categoryAPI/"
+    const url = pathBackend + "categoryAPI/"
     cat = await loadRemoteNew(url)
     return cat;
 }
@@ -92,21 +82,21 @@ async function loadRemoteColor() {
  */
 async function setRemoteTodos(task) {
     let id = task['id'];
-    const url = pathBackend+"createTodoAPI/" + id + "/";
+    const url = pathBackend + "createTodoAPI/" + id + "/";
     saveRemoteNew(url, task, 'PUT', true);
 }
 
 async function deleteTodo(id) {
-    const url = pathBackend+"createTodoAPI/" + id + "/";
+    const url = pathBackend + "createTodoAPI/" + id + "/";
     saveRemoteNew(url, {}, 'DELETE', true);
 }
 
 async function makeCategory(newCat) {
-    const url = pathBackend+"categoryAPI/";
+    const url = pathBackend + "categoryAPI/";
     saveRemoteNew(url, newCat, 'POST', true);
 }
 async function makeNewTodos(task) {
-    const url = pathBackend+"createTodoAPI/";
+    const url = pathBackend + "createTodoAPI/";
     saveRemoteNew(url, task, 'POST', true);
 }
 
@@ -114,13 +104,28 @@ async function makeNewTodos(task) {
 
 async function registerUser(userData) {
 
-    const url = pathBackend+"registerAPI/";
-    let data = saveRemoteNew(url, userData, 'POST', false);
+    const url = pathBackend + "registerAPI/";
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    let state = "";
+    const requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: JSON.stringify(userData),
+        redirect: 'follow',
+    };
+    try {
+        let resp = await fetch(url, requestOptions).then(st => state = st.ok);
+    } catch (e) {
+        //console.error(e);
+    }
+    return state;
 }
 
 async function getUserbyId(id) {
 
-    const url = pathBackend+"user/" + id + "/";
+    const url = pathBackend + "user/" + id + "/";
     let data = await loadRemoteNew(url);
     return data
 }
@@ -137,7 +142,7 @@ function getidFromLocalStorage() {
 }
 
 async function loadRemoteTodos() {
-    const url = pathBackend+"createTodoAPI/";
+    const url = pathBackend + "createTodoAPI/";
     tasks = await loadRemoteNew(url);
     return tasks
 }
@@ -164,7 +169,7 @@ async function loadRemoteNew(url) {
 }
 
 async function saveRemoteNew(url, dataUpload, method, bool) {
-    const myHeaders = new Headers();    
+    const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     if (bool) {
         myHeaders.append("Authorization", 'Token ' + localStorage.getItem('token'));
@@ -179,8 +184,9 @@ async function saveRemoteNew(url, dataUpload, method, bool) {
     try {
         let resp = await fetch(url, requestOptions);
         data = await resp.json();
+
     } catch (e) {
-        console.error(e);
+        //console.error(e);
     }
     return data;
 }

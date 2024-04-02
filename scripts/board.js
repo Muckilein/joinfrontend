@@ -51,7 +51,7 @@ function makeAssignmentList(t) {
 
 function getUserByID(id) {
     let u = null;
-    users.forEach((c) => {
+    dummyContacts.forEach((c) => {
         if (c['id'] == id) {
             u = c;
             return c;
@@ -72,7 +72,7 @@ async function initBoard() {
     setTimeout(() => {
         renderTasks();
     }, 1500);
-    addNameToHref();
+    //addNameToHref();
     window.addEventListener("resize", resizeListener);
     if (isFull) {
         isSmall = false;
@@ -439,7 +439,7 @@ function displayTaskDetailsEdit(index) {
     document.getElementById('dateEdit').value = elem['date'];
     renderMemberDialog(index, 'memberDialogSectionEdit');
     document.getElementById('taskEdit').classList.add('gap');
-    showAssignmentCheckboxesEdit(index);
+    //showAssignmentCheckboxesEdit(index);
     document.getElementById('prioEdit0').style.backgroundColor = setColorEdit('0');
     document.getElementById('prioEdit1').style.backgroundColor = setColorEdit('1');
     document.getElementById('prioEdit2').style.backgroundColor = setColorEdit('2');

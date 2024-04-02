@@ -23,16 +23,45 @@ async function initIndex() {
     }
 }
 
+function handleErrorSignUp() {
+    document.getElementById('notePassword').classList.remove("d-none");
+    setTimeout(() => {
+        document.getElementById('notePassword').classList.add("d-none");
+    },3000);
+
+}
 
 
 /**
  * This function handles the registration process by checking if the email already exists, adding the new user, resetting the form, and displaying a success message.
  */
 async function register() {
-    const newUser = getNewUserFromInputs();
-    registerUser(newUser);
-    resetForm();
-    displayRegistrationSuccess();
+    let passwordInput = document.getElementById('password');
+    if (passwordInput.lenght < 8) {
+        handleErrorSignUp()
+    }
+    else {
+        const newUser = getNewUserFromInputs();
+        try {
+            let resp = await registerUser(newUser);
+            console.log("status is", resp);
+            if (resp == true) {
+                resetForm();
+                displayRegistrationSuccess();
+            }else{
+                handleErrorSignUp();
+                document.getElementById('password').value="";
+            }
+        }
+
+        catch (e) {
+            console.error(e);
+            handleErrorSignUp();
+        }
+
+    }
+
+
 
 }
 
@@ -169,6 +198,8 @@ async function loginUser(event) {
     let email = emailInput.value;
     let password = passwordInput.value;
     await login(email, password);
+
+
 
 }
 

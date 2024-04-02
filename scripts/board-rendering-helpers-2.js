@@ -13,21 +13,6 @@ function preventLoadNew(id) {
 }
 
 /**
- * Make the name of the current user available in all tabs
- */
-async function addNameToHref() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const msg = urlParams.get('name');
-    const id = urlParams.get('id');
-
-    if (msg) {
-        nameUser = msg;
-
-    }
-    setNameToHrefs(nameUser,id);
-}
-
-/**
  * delets the task with the given id
  * 
 * @param {number} index     indes of the task, that shell be deleted

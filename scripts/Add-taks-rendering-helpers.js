@@ -67,8 +67,7 @@ async function loadContacts() {
 
 
 
-function getActivUser(users, id) {
-    //id = getidFromLocalStorage(); 
+function getActivUser(users, id) {  
     let us = null;
     users.forEach((u) => {
         if (u.id == id) {
@@ -78,68 +77,12 @@ function getActivUser(users, id) {
     return us;
 }
 
-
-function getJ() {
-    let j = {
-        "id": 4,
-        "title": "IT Department Konsultieren",
-        "description": "Rufe in der IT an",
-        "date": "2024-03-04",
-        "color": "#ffffff",
-        "checked": true,
-        "prio": "2",
-        "state": "1",
-        "category": {
-            "id": 3,
-            "title": "Development"
-        },
-        "assignments": [{ "id": 4, "username": "AnniMaus" }],
-        "subtask": [
-            {
-                "id": 46,
-                "title": "Lesen",
-                "checked": false
-            },
-            {
-                "id": 47,
-                "title": "Rabarba",
-                "checked": true
-            }
-        ]
-    }
-    return j;
-}
-
-
-
-async function save() {
-
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", 'Token ' + "826a8ea96595f1ae6f14e374ebc715d27dc2600f");
-    const raw = getJ();
-    const requestOptions = {
-        method: 'PUT',
-        headers: myHeaders,
-        body: JSON.stringify(raw),
-        redirect: 'follow'
-    };
-    try {
-        let resp = await fetch(pathBackend+"createTodoAPI/4/", requestOptions);
-        let json = await resp.json();
-    } catch (e) {
-        // Show error message
-        console.error(e);
-
-    }
-}
-
 /**
  * 
  * @param {string} n  Saves the JSON object of a contact with the name n in the variable 'dummy'
  */
 function getJSONContact(n) {
-    users.forEach(element => {
+    dummyContacts.forEach(element => {
         if (element['username'] == n) {
             dummy = element;
             return dummy;
@@ -212,6 +155,7 @@ function sizeAction() {
  */
 
 function addContact(elem, add) {
+    console.log('addContact');    
     let t = ` <div class="selectGapArrow" onclick="stoppen(event)">
     <label style="cursor:pointer"  for="selCont${add + '' + elem['id']}">${elem['username']}</label>
     <input check${add} type="checkbox" id="selCont${add + '' + elem['id']}" name="${elem['username']}" style="cursor:pointer" />
@@ -219,7 +163,7 @@ function addContact(elem, add) {
     let cont = document.getElementById('assignmentChoices' + add).innerHTML;
     document.getElementById('assignmentChoices' + add).innerHTML = '' + t + cont;
     if (add == 'Edit') { document.getElementById(`selCont${add + '' + elem['id']}`).checked = true; }
-
+    //return document.getElementById(`selCont${add + '' + elem['id']}`);
 }
 
 /**
@@ -330,12 +274,13 @@ async function newCategoryChoosen() {
     chosenCategory = document.getElementById('newCategory').value;
 
     if (chosenCategory != "") {
-        newCategory += `<div class="selectionChoice" onclick="setCategory('${chosenCategory}',event)" value="${chosenCategory}">${chosenCategory}<div class="circle"  style="background-color:${categoryColor} "></div></div>`;
+        //newCategory += `<div class="selectionChoice" onclick="setCategory('${chosenCategory}',event)" value="${chosenCategory}">${chosenCategory}<div class="circle"  style="background-color:${categoryColor} "></div></div>`;
         expandedCategory = false;
         let c = { "title": chosenCategory, "color": categoryColor }
         let cat = await makeCategory(c);
         colorsCategory.push(c);
         showCategory(categoryColor);
+        chosenCategory = c;
         document.getElementById('selectionCategory').innerHTML += newCategory;
         document.getElementById('colorChoice').classList.add('d-none');
 
@@ -432,7 +377,7 @@ function showCategory() {
  * @param {string} id       id of the form object
  * @param {string} query    the attribut that all the relevant checkboxes contain
  */
-function checkboxValidation(id, query) {
+function checkboxValidation(id, query) { //----old function
     const form = document.getElementById(id);
     checkboxes = form.querySelectorAll(query);
     firstCheckbox = checkboxes.length > 0 ? checkboxes[0] : null;
@@ -456,7 +401,7 @@ function isChecked() {
 /**
  * If no checkbox of the assignements is selected, it blend in an error message 'At least one checkbox must be selected.' at the first checkbox.
  */
-function checkValidity() {
+function checkValidity() { //---old function
     const errorMessage = !isChecked() ? 'At least one checkbox must be selected.' : '';
 
     firstCheckbox.setCustomValidity(errorMessage);

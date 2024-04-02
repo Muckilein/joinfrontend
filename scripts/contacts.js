@@ -1,7 +1,7 @@
 let madeSmall;//madeSmall= true, when we went from fullscreen to smallscreen, false, when we went from smallcreen to fullscreen
 let actualContact;
 let detailDialog = false;
-let colorsIcon = ['#FF7A00', '#9327FF', '#29ABE2', '#FC71FF', '#02CF2F', '#AF1616', '#462F8A', '#FFC700', '#0223cf'];
+let colorsIcon = ['#FF7A00', '#9327FF', '#29ABE2', '#FC71FF', '#02CF2F', '#AF1616', '#462F8A', '#FFC700', '#0223cf','#0456cf'];
 let nameUser = "";
 setMadeSmall();
 window.addEventListener("resize", resizeListenerContacts);
@@ -62,7 +62,7 @@ async function loadContacts() {
   users = await getUsers();
   let i = 0;
   c.forEach(element => { //colors[i % 9]
-    let a = { "username": element['username'], "email": element['email'], "id": element['id'] + '', "iconColor": element['iconColor'], "short": element['short'] };
+    let a = { "username": element['username'], "email": element['email'], "id": element['id'] + '', "iconColor": element['iconColor'], "short": element['short'] ,"phone":element['phone']};
     i++;
     contacts.push(a);
     contacts.sort((a, b) => a.username.localeCompare(b.username));
@@ -91,79 +91,77 @@ async function renderContacts() {
     }
     containerContactlist.innerHTML += contactListHtml(contact, i);
   }
-  setTimeout(addNameToHref, 500);
+ 
 }
 
 /**
  * Make the name of the current user available in all tabs
  */
-async function addNameToHref() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const msg = urlParams.get('name');
-  const id = urlParams.get('id');
-  if (msg) {
-    nameUser = msg;
+// async function addNameToHref() {
+//   const urlParams = new URLSearchParams(window.location.search);
+//   const msg = urlParams.get('name');
+//   const id = urlParams.get('id');
+//   if (msg) {
+//     nameUser = msg;
 
-  }
-  setNameToHrefs(nameUser, id);
-}
+//   }
+//   setNameToHrefs(nameUser, id);
+// }
 
 /**
  * First it will get the value from the inputfields. After that it will split the first letter from the first- and 
  * secondname. After that it will create the short-Icon. Max Mustermann -> MM . After that it will push everything
  * in the current place from the contacts-array and save so the changes.
  */
-async function saveContactChanges(i) { 
+async function saveContactChanges(i) {
 
-  //let name = document.getElementById('changeName').value;
+  let name = document.getElementById('changeName').value;
   let email = document.getElementById('changeEmail').value;
-  let regUser = filterFromUser(email);
+  // let regUser = filterFromUser(email);
   let phone = document.getElementById('changePhone').value;
-  id = await getidFromLocalStorage();
- 
-  if (regUser) {
-    contacts[i].username = regUser.username;
-    contacts[i].email = email;
-    contacts[i].phone = phone;
-    contacts[i].short = regUser.short;   
-    let newContact = document.getElementById('newContact');
-    newContact.classList.add('d-none');
-    showContactDetails(i);
-    renderContacts();
-  }
+  
+  contactId = contacts[i]['id'];
+  contacts[i].username = name;
+  contacts[i].email = email;
+  contacts[i].phone = phone; 
+  let newContact = document.getElementById('newContact');
+  newContact.classList.add('d-none');
+  saveContact(contactId,contacts[i])
+  showContactDetails(i);
+  renderContacts();
 
 }
 
-function filterFromUser(email) {
-  regUser = null;
-  users.forEach((u) => {
-    if (u.email == email) {
-      regUser = u;
-    }
-  }); 
-  return regUser;
-}
+// function filterFromUser(email) {
+//   regUser = null;
+//   users.forEach((u) => {
+//     if (u.email == email) {
+//       regUser = u;
+//     }
+//   }); 
+//   return regUser;
+// }
 
 /**
  * This will delete the selected contact from the array contacts.
  */
 async function deleteContact(i) { //---old  delete
-    
-    await deleteThisContact(contacts[i]);
-    contacts.splice(i, 1);
-    let newContact = document.getElementById('newContact');
-    newContact.classList.add('d-none');
-    document.getElementById('resetName').innerHTML = "";
-    document.getElementById('resetInfo').innerHTML = "";
-    document.getElementById('resetEmailPhone').innerHTML = "";
-    await renderContacts();
-    document.getElementById('contactList').classList.remove('d-none');
-    document.getElementById('responsiveButton').classList.remove('d-none');
-    document.getElementById('responsiveHeadlinePhrase').classList.add('d-none');
-    document.getElementById('responsiveDelete').classList.add('d-none');
-    document.getElementById('responsiveEdit').classList.add('d-none');
-    document.getElementById('backArrowResponsive').classList.add('d-none');
-  
+
+  await deleteThisContact(contacts[i]);
+  contacts.splice(i, 1);
+  let newContact = document.getElementById('newContact');
+  newContact.classList.add('d-none');
+  document.getElementById('resetName').innerHTML = "";
+  document.getElementById('resetInfo').innerHTML = "";
+  document.getElementById('resetEmailPhone').innerHTML = "";
+  await renderContacts();
+  document.getElementById('contactList').classList.remove('d-none');
+  document.getElementById('responsiveButton').classList.remove('d-none');
+  document.getElementById('responsiveHeadlinePhrase').classList.add('d-none');
+  document.getElementById('responsiveDelete').classList.add('d-none');
+  document.getElementById('responsiveEdit').classList.add('d-none');
+  document.getElementById('backArrowResponsive').classList.add('d-none');
+
 }
 
 /**
@@ -171,45 +169,40 @@ async function deleteContact(i) { //---old  delete
  * and push it into the remote server.
  */
 async function newContact() {
-  
+  let name = document.getElementById('newName').value;
+  let split = name.split(' ');
+  console.log(split);
   let email = document.getElementById('newEmail').value;
-  let regUser = filterFromUser(email);
   id = await getidFromLocalStorage();
   let phone = document.getElementById('newPhone').value;
   let form = document.querySelector('form');
-  if (regUser) {   
-    id = getidFromLocalStorage();
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;   
-     }      
-  
-    let contact = {
-      "username": regUser.username,
-      "email": email,
-      "phone": phone,
-      "short": regUser.short,
-      "iconColor": regUser.iconColor,
-      "user": id
-    };
-
-    let contactData = await makeContact(id, contact);  
-    contacts.push(contactData);   
-    let newContact = document.getElementById('newContact');
-    newContact.classList.add('d-none');
-    renderContacts();
-  }else{
-   document.getElementById('requestMailMessage').classList.add('red');
-   setTimeout(()=>{
-    document.getElementById('requestMailMessage').classList.remove('red');
-   },2000);
+  let index = Math.floor(Math.random() * 10);
+  id = getidFromLocalStorage();
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
   }
+
+  let contact = {
+    "username": name,
+    "email": email,
+    "phone": phone,
+    "short": split[0].charAt(0) + split[1].charAt(0),
+    "iconColor": colorsIcon[index]
+  };
+
+  let contactData = await makeContact(id, contact);
+  contacts.push(contactData);
+  let newContact = document.getElementById('newContact');
+  newContact.classList.add('d-none');
+  renderContacts();
+
 }
 
 /**
  * Show the current clicked contact and give details about it.
  */
-function showContactDetails(i) { 
+function showContactDetails(i) {
   actualContact = i;
   let container = document.getElementById('contactDetails');
   let contact = contacts[i];
@@ -366,39 +359,39 @@ function showContactDetailsHtml(contact, i) {
 /**
  * Finds all Users that contain the given Sting in their email address
  */
-function findUser(){
-  console.log("find user");
-  document.getElementById("userMail").classList.remove('d-none');
-  mail = document.getElementById("newEmail").value;
-  let mailLow = mail.toLowerCase();
-  let mailUser="";
-  let mailList=[]
-  if(mailLow==""){
-    document.getElementById("userMail").innerHTML="";
-    document.getElementById("userMail").classList.add('d-none');
-  }
-  else{
-  users.forEach((u)=>{
-    mailUser= u['email'].toLowerCase();
-    if(mailUser.includes(mailLow))
-    {
-      mailList.push(u['email']);
-    }
-  }); 
-  let mailWindow =document.getElementById("userMail");
-  mailWindow.innerHTML="";
-  mailList.forEach((m)=>{  
-  mailWindow.innerHTML+=`<div onclick="setMail('${m}')">${m}</div>`;
-  });
-}
-}
+// function findUser(){
+//   console.log("find user");
+//   document.getElementById("userMail").classList.remove('d-none');
+//   mail = document.getElementById("newEmail").value;
+//   let mailLow = mail.toLowerCase();
+//   let mailUser="";
+//   let mailList=[]
+//   if(mailLow==""){
+//     document.getElementById("userMail").innerHTML="";
+//     document.getElementById("userMail").classList.add('d-none');
+//   }
+//   else{
+//   users.forEach((u)=>{
+//     mailUser= u['email'].toLowerCase();
+//     if(mailUser.includes(mailLow))
+//     {
+//       mailList.push(u['email']);
+//     }
+//   }); 
+//   let mailWindow =document.getElementById("userMail");
+//   mailWindow.innerHTML="";
+//   mailList.forEach((m)=>{  
+//   mailWindow.innerHTML+=`<div onclick="setMail('${m}')">${m}</div>`;
+//   });
+// }
+// }
 
-function setMail(mail){ 
-  
-  document.getElementById("newEmail").value = mail;
-  document.getElementById("userMail").innerHTML = "";
-  document.getElementById("userMail").classList.add('d-none');
-}
+// function setMail(mail){ 
+
+//   document.getElementById("newEmail").value = mail;
+//   document.getElementById("userMail").innerHTML = "";
+//   document.getElementById("userMail").classList.add('d-none');
+// }
 
 function newContactPopUpHtml() {
   return `
@@ -416,14 +409,8 @@ function newContactPopUpHtml() {
       <span class="mb-120">
       <div class="closeAddContactButton" onclick="closePopUpWindow()"><img class="" src="../img/cancelIcon.png"></div>
           <form id"formContact" onsubmit="newContact();return false;">
-              <div>
-              <div id="requestMailMessage"> 
-                   Bitte geben sie die E-MailAdresse eines registrierten Nutzers ein
-              </div> 
-              <div class="mails " id="userMail"  style="cursor:pointer"></div>
-              </div>
-              
-              <input type="email" id="newEmail" class="emailIcon" placeholder="Email" required onkeyup="findUser()">
+              <input type="text" id="newName"  placeholder="Name">              
+              <input type="email" id="newEmail" class="emailIcon" placeholder="Email" required >
               <input type="number" id="newPhone" class="phoneIcon" placeholder="Phone">
           <div class="buttonContainer">
           <button class="cancelButton" onclick="closePopUpWindow()">Cancel <img class="" src="../img/cancelIcon.png"></button>

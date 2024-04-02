@@ -21,10 +21,10 @@ let addedEditsubs = false;
  */
 async function renderTasks() {
     //clears up all areas   
-    document.getElementById('taskArea0').innerHTML = getNotTask(0,'to do');
-    document.getElementById('taskArea1').innerHTML = getNotTask(1,'progress');
-    document.getElementById('taskArea2').innerHTML = getNotTask(2,'awaiting feedback');
-    document.getElementById('taskArea3').innerHTML = getNotTask(3,'done');
+    document.getElementById('taskArea0').innerHTML = getNotTask(0, 'to do');
+    document.getElementById('taskArea1').innerHTML = getNotTask(1, 'progress');
+    document.getElementById('taskArea2').innerHTML = getNotTask(2, 'awaiting feedback');
+    document.getElementById('taskArea3').innerHTML = getNotTask(3, 'done');
     //only not filteres tasks are shown
     for (let i = 0; i < tasks.length; i++) {
 
@@ -57,9 +57,9 @@ function renderNoTaskLabel() {
  * @param {number} index  indes of the 
  */
 function createTaskHTML(index) {
-    let t;   
+    let t;
     let color = tasks[index]['color'];
-    let maxSubs = tasks[index]['subtask'].length;  
+    let maxSubs = tasks[index]['subtask'].length;
     let madeSubs = getAmountMadeSubs(index);
     let barAre = '';
     if (maxSubs > 0) {
@@ -101,7 +101,7 @@ function taskHTMLCode(barAre, index, color) {
             <img src=${prioImage(tasks[index]['prio'])}>
             </div>
             </div>`;
-             return t;
+    return t;
 }
 
 //-----------------------------------------------resizeing of the screen-------------------------------------------------------------
@@ -158,19 +158,8 @@ function resizeListener() {
  * @param {string} id       is of the form element that is responsible for the form validation and submits the editTask
  */
 function editTask(id) {
-    let index = editIndex;   
-    //in add-task.js checks if at least one checkbox with attribut checkEdit is clicked
-    checkboxValidation(id, '[checkEdit]');
-    // if formvalidation was succesful
-    if (checked) {             
-       editTaskCorrectForm(index,id);
-    }
-    else {
-        if (!expanded) {
-            showCheckboxesEdit(0);
-            checkboxValidation(id, '[checkEdit]');
-        }
-    }
+    let index = editIndex;
+    editTaskCorrectForm(index, id);
 }
 
 /**
@@ -179,8 +168,8 @@ function editTask(id) {
  * @param {String} id     id of the Form object, that submits the editTask 
  */
 
-function editTaskCorrectForm(index,id){
-    
+function editTaskCorrectForm(index, id) {
+
     if (!expandSub) { openSubtasks(); }
     addSubtaskToTasks();
     //reads the required informations from all kind of inputs and set the information to the task
@@ -188,7 +177,7 @@ function editTaskCorrectForm(index,id){
     tasks[index]['description'] = document.getElementById('descriptionEdit').value;
     tasks[index]['prio'] = '' + prio;
     tasks[index]['assignments'] = getAssignmentsEdit(id);
-    tasks[index]['date'] = document.getElementById('dateEdit').value;       
+    tasks[index]['date'] = document.getElementById('dateEdit').value;
     setRemoteTodos(tasks[index]);
     addedEdit = false;
     document.getElementById('taskEdit').classList.add('d-none');
@@ -206,17 +195,17 @@ function editTaskCorrectForm(index,id){
  * @param {number} num  the state in which the task is located: e.g. 0 for "To do", 1 for In progress
  */
 async function openAddTask(num) {
-   
+
     dialog = true;
     state = num;
     document.getElementById('assignedIcon').innerHTML = '';
     document.getElementById('subtasksArea').innerHTML = '';
     addDummyUser();
-    numberSubtasks=1;
+    numberSubtasks = 1;
     //fullscreen
     if (window.innerWidth > 800) {
         fullscreen = true;
-    }  
+    }
     else {
         openAddTaskSmallScreen();
     }
@@ -229,9 +218,9 @@ async function openAddTask(num) {
 /**
  * Adds the first two contacts of the Contactlist in the Assignment checkbox
  */
-function addDummyUser(){
-    if (!added) {
-        addContact(users[0], '');       
+function addDummyUser() {
+    if (!added && dummyContacts.length>0) {
+        addContact(dummyContacts[0], '');
         added = true;
     }
 }
@@ -282,6 +271,14 @@ function showAssignmentCheckboxesEdit(index) {
     let assing = tasks[index]['assignments'];
     let checkbox = document.getElementById("assignmentChoicesEdit");
     checkboxes = form.querySelectorAll('[checkEdit]');
+    console.log(checkboxes);
+    if (checkboxes.length == 0) {
+        console.log('add');
+        let i = dummyContacts.length-1;
+        console.log(i);
+        //addContact(users[i], 'Edit');
+        
+    }
     // checkboxes = form.querySelectorAll('input[type=checkbox]');
     if (!expanded) {
         checkbox.classList.remove('d-none');
@@ -294,7 +291,7 @@ function showAssignmentCheckboxesEdit(index) {
 
     }
     //renders all the assigments of the tasks in the checkbox
-    
+
     if (!addedEdit) {
         addContactEdit(assing); addedEdit = true;
     }
@@ -382,9 +379,9 @@ function isContactExisting(cont) {
 function filterExistingAssignments(assingments) {
     let ass = [];
     assingments.forEach(a => {
-       // if (isContactExisting(a)) {
-            ass.push(a);
-       // }
+        // if (isContactExisting(a)) {
+        ass.push(a);
+        // }
     })
     return ass;
 }
@@ -424,7 +421,7 @@ function renderMemberDialog(index, id) {
  */
 function renderMember(index) {
     let member = document.getElementById('memberArea' + index);
-    let memberList = tasks[index]['assignments'];    
+    let memberList = tasks[index]['assignments'];
     memberList = filterExistingAssignments(tasks[index]['assignments']);
     let l = 0;
     if (memberList.length > 0) {

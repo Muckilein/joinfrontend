@@ -55,12 +55,14 @@ async function urgentTask() {
 /**
  * This function generates a personalized greeting message based on the current time of day.
  */
-function getTimeandGreets() {
-    const urlParams = new URLSearchParams(window.location.search);
-    userName = urlParams.get('name');
-    const id = urlParams.get('id');
-    const greetingTextElement = document.getElementById('greetingText');
-    const userElement = document.getElementById('user');
+async function getTimeandGreets() {
+    // const urlParams = new URLSearchParams(window.location.search);
+    let userName =  localStorage.getItem('username');
+    console. log(userName);
+    // userName = urlParams.get('name');
+    // const id = urlParams.get('id');
+    let greetingTextElement = document.getElementById('greetingText');
+    let userElement = document.getElementById('user');
     let today = new Date();
     let currentHour = today.getHours();
     let greeting = currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good day' : 'Good evening';
@@ -73,9 +75,7 @@ function getTimeandGreets() {
         userElement.textContent = userName;
         greetingTextElement.textContent = greeting + ',';
     }
-
-    //setNameToHrefsNew(userName,user.id,'c0a6fc4b7bb130530b2a39f5d87beac12271762d');
-    setNameToHrefs(userName,id);
+ 
 };
 
 /**

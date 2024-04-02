@@ -10,6 +10,10 @@ body {
   padding: 19px;
 }
 
+.d-none{
+  display: none;
+}
+
 .signup-form {
   position: relative;
   display: flex;
