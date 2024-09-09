@@ -460,14 +460,6 @@ function action(formData) {
     return fetch(input, requestInit);
 }
 
-
-async function onPageLoad() {
-    email = getEmailUrl();
-    user = await getPasswordResetUser();
-}
-
-
-
 function getEmailUrl() {
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);

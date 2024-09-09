@@ -8,8 +8,10 @@ let p;
 let contacts;
 let generatedLetters = [];
 let colorsCategory = []
-let pathBackend = "http://127.0.0.1:8000/";
-let frontendPath = "http://127.0.0.1:5500/"
+// let pathBackend = "http://127.0.0.1:8000/";
+// let frontendPath = "http://127.0.0.1:5500/"
+let pathBackend = "https://join.julia-developer.de/";
+let frontendPath = "https://julia-developer.de/Join-frontend/";
 
 /**
  * load all external html files with the attribut w3-include-html
